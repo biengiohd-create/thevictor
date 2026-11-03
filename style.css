@@ -17,3 +17,6 @@ footer{padding:30px 6% 16px;grid-template-columns:1.15fr 1fr 1fr;gap:24px 30px;a
 
 .more-products{padding-top:0;padding-bottom:45px}.shop.section{padding-bottom:32px}
 
+/* Nút mua gọn và nổi bật. */
+.buy-now{background:#a62f40;border-color:#a62f40;font-size:8px;line-height:1.5;letter-spacing:.45px;padding:5px 9px;border-radius:3px;box-shadow:0 2px 5px #8b25331a}.buy-now:hover{background:#842234;border-color:#842234}.buy-now:active{transform:translateY(1px)}.quick{display:flex;align-items:center;justify-content:center;width:30px;height:30px;padding:6px}.quick svg{width:18px;height:18px;flex-shrink:0}.shop-controls{justify-content:flex-end}.shop-controls .tools{margin-left:auto}@media(max-width:700px){.buy-now{font-size:7px;padding:5px 7px;letter-spacing:.2px}.quick{width:28px;height:28px;padding:5px}.quick svg{width:17px;height:17px}.shop-controls{align-items:stretch;padding-top:0}.shop-controls .tools{margin-left:0}}
+
