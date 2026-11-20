@@ -3,6 +3,7 @@ declare(strict_types=1);
 const TEAM_RIGHTS=['view'=>'Xem ĐƠN WEB / BẢNG ĐƠN','edit'=>'Thêm, sửa, xóa trong BẢNG ĐƠN','inbox_status'=>'Đổi trạng thái ĐƠN WEB','board'=>'LÊN BẢNG','export'=>'Xuất CSV','history'=>'Xem lịch sử','restore'=>'Khôi phục BẢNG ĐƠN','manage_staff'=>'Quản lý nhân viên','manage_groups'=>'Cấu hình nhóm quyền','analytics'=>'Xem thống kê'];
 const TEAM_GROUPS=['manager'=>'QUẢN LÝ','page'=>'TRỰC PAGE','care'=>'CARE ĐƠN'];
 function team_db(): PDO {
+ static $db=null;if($db instanceof PDO)return $db;
  $db=new PDO('sqlite:'.admin_private().'/admin-auth.sqlite',null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]);
  $db->exec('PRAGMA busy_timeout=5000; CREATE TABLE IF NOT EXISTS staff(id INTEGER PRIMARY KEY AUTOINCREMENT,username TEXT UNIQUE NOT NULL,name TEXT NOT NULL,password_hash TEXT NOT NULL,rights TEXT NOT NULL,active INTEGER NOT NULL DEFAULT 1,version TEXT NOT NULL,created_at TEXT NOT NULL);CREATE TABLE IF NOT EXISTS staff_groups(id TEXT PRIMARY KEY,rights TEXT NOT NULL)');
  if(!in_array('group_id',array_column($db->query('PRAGMA table_info(staff)')->fetchAll(),'name'),true))$db->exec("ALTER TABLE staff ADD COLUMN group_id TEXT NOT NULL DEFAULT ''");
@@ -36,3 +37,4 @@ function team_save(array $data): void {
  $args=[$username,$name,json_encode(array_values(array_unique($rights))),$group,$active?1:0,bin2hex(random_bytes(16))];
  try{if($id){$sql='UPDATE staff SET username=?,name=?,rights=?,group_id=?,active=?,version=?';if($password!==''){$sql.=',password_hash=?';$args[]=password_hash($password,PASSWORD_DEFAULT);}$sql.=' WHERE id=?';$args[]=$id;}else{$sql='INSERT INTO staff(username,name,rights,group_id,active,version,password_hash,created_at) VALUES(?,?,?,?,?,?,?,?)';$args[]=password_hash($password,PASSWORD_DEFAULT);$args[]=gmdate('c');}$db->prepare($sql)->execute($args);}catch(PDOException $e){if((string)$e->getCode()==='23000')throw new RuntimeException('Tên đăng nhập đã tồn tại.',409);throw $e;}
 }
+
