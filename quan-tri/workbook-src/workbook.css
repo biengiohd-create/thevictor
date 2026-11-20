@@ -8,3 +8,5 @@
 #teamForm select{padding:9px;border:1px solid #c5d6c7;border-radius:4px;font:14px Arial}.group-form{border:1px solid #d8e5da;padding:12px;margin:10px 0;border-radius:6px}.group-form h4{margin:0 0 10px}.group-form fieldset{display:grid;grid-template-columns:1fr 1fr;gap:8px;border:0;padding:0}.group-form .check{display:flex;align-items:center;gap:6px;font-size:12px}.group-form button{margin-top:10px;padding:8px 12px;background:#187342;color:white;border:0;border-radius:4px;cursor:pointer}
 @media(max-width:700px){.sheet-menus{overflow:visible;flex-wrap:wrap;font-size:12px}.sheet-menus summary{padding:6px}.menu-items{min-width:210px}.group-form fieldset{grid-template-columns:1fr}}
 #editor [data-u-comp="ribbon-header-menu"]{display:none}
+
+.group-card{border:1px solid #d8e5da;border-radius:6px;margin:8px 0}.group-card>summary{padding:10px 14px;background:#f4f8f5;color:#173e28;cursor:pointer;font-weight:700}.group-card .group-form{border:0;margin:0}

@@ -30,5 +30,5 @@ $('history').onclick=async()=>{try{const data=await request('history');$('histor
 setInterval(async()=>{if(!editor||saving||dirty())return;try{const result=await request('version');if(result.version!==revision){if(!cellEditing)await load();else status('Có dữ liệu mới; bảng sẽ cập nhật sau khi bạn hoàn tất sửa ô.');}}catch{}},10000);
 window.addEventListener('beforeunload',e=>{if(dirty()||cellEditing){e.preventDefault();e.returnValue='';}});window.addEventListener('pagehide',()=>clearTimeout(timer));load();
 
-if('BroadcastChannel' in window){const inboxChannel=new BroadcastChannel('victor-workbook');inboxChannel.onmessage=()=>{if(!dirty()&&!cellEditing&&!saving)load();else status('Có đơn vừa được lên bảng. Lưu xong rồi mở bản mới để xem.');};}
+if('BroadcastChannel' in window){const inboxChannel=new BroadcastChannel('victor-workbook');inboxChannel.onmessage=()=>{if(!dirty()&&!cellEditing&&!saving)load();else status('Có đơn vừa được lên bảng. Lưu xong rồi làm mới để xem.');};}
 
