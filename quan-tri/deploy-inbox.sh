@@ -32,10 +32,11 @@ mkdir -p "$assets"
 cp -a dist/assets/. "$assets/"
 find "$assets" -type d -exec chmod 0755 {} +
 find "$assets" -type f -exec chmod 0644 {} +
-for file in team.php lib.php workbook-lib.php inbox-flow.php api.php sheet-api.php workbook-api.php admin.js spreadsheet-view.php index.php; do
+for file in team.php lib.php workbook-lib.php inbox-flow.php api.php sheet-api.php workbook-api.php admin.css admin.js spreadsheet-view.php index.php; do
  install -m 0644 "$source_dir/quan-tri/$file" "$root/public_html/quan-tri/$file.new"
  mv "$root/public_html/quan-tri/$file.new" "$root/public_html/quan-tri/$file"
 done
 install -m 0644 "$release/orders.php" "$root/public_html/api/orders.php.new"
 mv "$root/public_html/api/orders.php.new" "$root/public_html/api/orders.php"
 printf 'INBOX DEPLOYED %s\nBACKUP %s\n' "$revision" "$backup"
+

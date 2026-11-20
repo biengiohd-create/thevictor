@@ -8,7 +8,7 @@ Chọn ô rồi gõ thay nội dung; bấm đúp hoặc F2 đặt con trỏ sử
 
 ## Đơn website và bản làm việc
 
-Đơn website chỉ vào khu Đơn hàng, mặc định Chờ xác nhận. Nhân viên được copy, chọn Chờ xác nhận / OK / KNM / THUÊ BAO / KO MUA và bấm LÊN BẢNG; máy chủ chặn sửa thông tin hoặc xóa đơn gốc, kể cả qua API cũ. LÊN BẢNG chuyển riêng từng đơn vào dòng trống đầu tiên, ánh xạ theo tiêu đề cột, bỏ qua dòng chứa giá trị, công thức hoặc rich text. Mã website, thời gian đặt, tuổi, ghi chú nội bộ và phí vận chuyển được thêm vào các cột bổ sung. Snapshot và dấu đã chuyển lưu trong cùng giao dịch; bấm lại không nhập trùng. Những dòng đã nhận trước bản cập nhật được giữ nguyên và đánh dấu đã lên bảng. Bảng nhân viên là bản làm việc độc lập: sửa hoặc xóa hàng không sửa hoặc xóa đơn website gốc. Tạo đơn có nội dung vẫn có nghĩa là đã tạo và đẩy vận chuyển; không tự gọi đơn vị giao hàng.
+Đơn website chỉ vào khu Đơn hàng, mặc định Chờ xác nhận. Nhân viên được copy, chọn Chờ xác nhận / OK / KNM / THUÊ BAO / HỦY và bấm LÊN BẢNG; máy chủ chặn sửa thông tin hoặc xóa đơn gốc, kể cả qua API cũ. LÊN BẢNG chuyển riêng từng đơn vào dòng trống đầu tiên, ánh xạ theo tiêu đề cột, bỏ qua dòng chứa giá trị, công thức hoặc rich text. Mã website, thời gian đặt, tuổi, ghi chú nội bộ và phí vận chuyển được thêm vào các cột bổ sung. Snapshot và dấu đã chuyển lưu trong cùng giao dịch; bấm lại không nhập trùng. Những dòng đã nhận trước bản cập nhật được giữ nguyên và đánh dấu đã lên bảng. Bảng nhân viên là bản làm việc độc lập: sửa hoặc xóa hàng không sửa hoặc xóa đơn website gốc. Tạo đơn có nội dung vẫn có nghĩa là đã tạo và đẩy vận chuyển; không tự gọi đơn vị giao hàng.
 
 ## Quyền, lưu trữ và phục hồi
 

@@ -25,6 +25,7 @@ function inbox_place(array $snapshot,array $order): array {
  while($row<50000){$occupied=false;foreach(($sheet['cellData'][$row]??[]) as $cell){if(!is_array($cell))continue;if((array_key_exists('v',$cell)&&$cell['v']!==null&&$cell['v']!=='')||!empty($cell['f'])||!empty($cell['p'])){$occupied=true;break;}}if(!$occupied)break;$row++;}
  if($row>=50000)throw new RuntimeException('Bảng nhập đơn đã đủ 50.000 dòng.',400);
  foreach($order['values'] as $i=>$value){$c=$columns[$i];$style=$sheet['cellData'][$row][$c]['s']??null;$cell=['v'=>$value??'','t'=>$i===2?4:($i===0&&is_numeric($value)?2:1)];if($style)$cell['s']=$style;if($i===2)$cell['s']=['n'=>['pattern'=>'@']];if($i===1)$cell['custom']=['websiteOrder'=>$order['code']];$sheet['cellData'][$row][$c]=$cell;}
+ foreach(($sheet['cellData'][0]??[]) as $c=>$header)if(mb_strtoupper(trim((string)($header['v']??'')),'UTF-8')==='STT')$sheet['cellData'][$row][$c]=['v'=>$row,'t'=>2,'f'=>'=ROW()-1'];
  $sheet['rowCount']=min(50000,max($sheet['rowCount']??1000,$row+100));return [$snapshot,$row+1];
 }
 function inbox_transfer(PDO $db,array $input,string $actor): array {
