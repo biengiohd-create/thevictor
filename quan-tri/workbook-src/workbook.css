@@ -10,3 +10,8 @@
 #editor [data-u-comp="ribbon-header-menu"]{display:none}
 
 .group-card{border:1px solid #d8e5da;border-radius:6px;margin:8px 0}.group-card>summary{padding:10px 14px;background:#f4f8f5;color:#173e28;cursor:pointer;font-weight:700}.group-card .group-form{border:0;margin:0}
+
+.victor-filter-popover{position:fixed;z-index:9999;width:232px;padding:6px 0;border:1px solid #dadce0;border-radius:6px;background:white;box-shadow:0 4px 14px #0003}.victor-filter-popover button{display:block;width:100%;border:0;background:white;color:#202124;text-align:left;padding:11px 16px;font:13px Arial;cursor:pointer}.victor-filter-popover button:hover,.victor-filter-popover button:focus-visible{background:#e6f4ea;outline:none;color:#137333}.victor-filter-popover button:disabled{color:#9aa0a6;cursor:default}
+#editor [data-u-command="victor.filter.toolbar"]{font-size:0;width:28px;min-width:28px;color:#3c4043}
+#editor [data-u-command="victor.filter.toolbar"]::before{content:"";display:block;width:20px;height:20px;background:currentColor;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='1.8' stroke-linejoin='round' d='M3 4h18l-7 8v6l-4 2v-8z'/%3E%3C/svg%3E") center/20px 20px no-repeat}
+#editor [data-u-command="victor.filter.toolbar"]:hover{color:#137333;background:#e6f4ea}
