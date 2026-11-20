@@ -1,29 +1,23 @@
-# Quản trị THE VICTOR trên VinaHost
+# THE VICTOR · Bảng tính nhân viên v2
 
-Mã quản trị này được lấy từ hosting đang chạy rồi bổ sung bảng nhập đơn và tài khoản nhân viên. Website trên nhánh main hiện chưa chứa toàn bộ API của hosting. Không triển khai toàn bộ repo đè lên public_html.
+Hai khu hiện tại được giữ: /quan-tri/ nhận đơn website; /quan-tri/sheet.php là sổ tính nhân viên dùng bộ máy Univer 1.5.2 tự host. Mã trong workbook-src được build bằng npm ci rồi Vite; không dùng dịch vụ Google hay mô-đun Univer thương mại.
 
-## Sử dụng
+## Thao tác
 
-Mở `/quan-tri/sheet.php`, dùng tài khoản chủ shop hiện có. Bấm đúp hoặc F2 để sửa ô, Shift+bấm để chọn vùng, Ctrl+C/Ctrl+V để trao đổi dữ liệu với Excel/Google Sheets. Bấm **Lưu thay đổi** để gửi dữ liệu lên máy chủ. Có hoàn tác cho dữ liệu chưa lưu; không tự lưu ngầm.
+Chọn ô rồi gõ thay nội dung; bấm đúp hoặc F2 đặt con trỏ sửa từng ký tự. Có thanh công thức, SUM/IF/COUNTIF/VLOOKUP và các hàm bộ máy hỗ trợ, dán vùng, kéo điền, định dạng chữ/màu/viền, gộp ô, chèn/xóa hàng cột, bộ lọc/sắp xếp, tìm/thay thế, xác thực dữ liệu, định dạng có điều kiện, nhiều tab và hoàn tác/làm lại. Tự lưu sau khi kết thúc sửa ô và ngừng thao tác 3 giây. Nút Lưu ngay cũng kết thúc sửa ô trước khi chụp sổ.
 
-Các cột: Tiền, Tên khách, SĐT, Địa chỉ, Sản phẩm/size, Note, Check size, Tạo đơn, Chiều cao/cân nặng, Tình trạng, Mã vận đơn, Hoàn. Cột Tạo đơn có dữ liệu nghĩa là nhân viên đã tạo và đẩy đơn sang đơn vị vận chuyển. Hệ thống chỉ ghi nhận; không gọi API vận chuyển. Khi sửa ô sản phẩm, nội dung được lưu thành một dòng hàng tự nhập; website không tự tra SKU, size, giá hoặc tồn kho cho dòng tự nhập này.
+## Đơn website và bản làm việc
 
-Tiền là tổng COD theo đơn, SĐT là chuỗi giữ số 0 đầu. Dán bắt đầu từ ô đã chọn, không bao gồm STT. Tối đa 200 dòng mỗi lần lưu, bảng tải 100 đơn/trang. CSV xuất theo bộ lọc, tối đa 10.000 đơn. Excel có thể tự đổi kiểu SĐT khi mở CSV; hãy nhập cột SĐT dưới dạng văn bản.
+Lần mở đầu tiên sao chép tối đa 10.000 đơn hiện có, bao gồm trường vận hành đã nhập ở v1. Nút Nhận đơn website mới thêm những đơn chưa nhận. Mã đơn đã nhận được theo dõi riêng nên không nhập lặp dòng mà nhân viên đã xóa. Bảng nhân viên là bản làm việc độc lập: sửa hoặc xóa hàng không sửa hoặc xóa đơn website gốc. Tạo đơn có nội dung vẫn có nghĩa là đã tạo và đẩy vận chuyển; không tự gọi đơn vị giao hàng.
 
-## Phân quyền
+## Quyền, lưu trữ và phục hồi
 
-Chủ shop mở **Quản lý nhân viên** để tự tạo tài khoản, cấp quyền xem, tạo, sửa, xuất dữ liệu, xóa/khôi phục hoặc thống kê. Nhân viên có quyền xem toàn bộ đơn hàng. Mỗi lần đổi quyền hoặc khóa tài khoản sẽ thu hồi phiên cũ. Quyền được kiểm tra tại cả API cũ và API bảng tính. Không có tài khoản hay mật khẩu mặc định.
+Dùng tài khoản chủ shop và nhân viên hiện có. Quyền view được đọc bảng; edit được sửa sổ bao gồm thêm/xóa ô, hàng, cột, tab. Quyền xuất kiểm soát nút CSV/JSON; người có quyền xem vẫn có thể copy dữ liệu họ nhìn thấy. Quản lý nhân viên và khôi phục phiên bản chỉ dành cho chủ shop.
 
-## Dữ liệu
+Sổ được lưu thành snapshot JSON (gồm công thức, rich text, định dạng, thứ tự tab và tài nguyên) vào bảng staff_workbook trong SQLite riêng ngoài public_html. Có 30 phiên bản cũ. Kiểm tra version ở máy chủ ngăn ghi đè phiên bản mới của người khác; đây chưa phải cộng tác con trỏ trực tiếp như Google Sheets. Khi xung đột, dừng tự lưu và giữ nguyên dữ liệu đang sửa; tải JSON rồi mở bản mới. Mỗi sổ tối đa 8 MB/150.000 ô có dữ liệu, 20 tab; mỗi tab tối đa 50.000 hàng và 512 cột.
 
-Giữ nguyên `orders.sqlite` và cấu hình chủ shop trong `/home/twjmlulv/thevictor-private`, bên ngoài public_html. Bảng `order_sheet` lưu các trường vận hành mới, `order_sheet_audit` lưu các lần sửa với người sửa/thời gian, `staff` trong `admin-auth.sqlite` lưu tài khoản với password_hash. Cập nhật dùng version chung với trang chi tiết cũ. Nếu một dòng đã đổi, cả đợt lưu bị rollback, nội dung trên màn hình được giữ nguyên để người nhập sao chép và tải lại.
+CSV chỉ có giá trị hiển thị của tab hiện tại; JSON giữ cả công thức và định dạng. Không hỗ trợ Apps Script, hàm dịch vụ riêng của Google, biểu đồ/pivot và nhập/xuất XLSX gốc trong bản này. Không tuyên bố tương thích 100% Google Sheets.
 
-Không commit tệp cấu hình tài khoản, SQLite, phiên đăng nhập hay dữ liệu khách hàng lên GitHub.
+## Triển khai
 
-## Triển khai có kiểm thử và sao lưu
-
-`deploy-admin-sheet.sh COMMIT_SHA` chạy trên hosting. Script lấy commit cố định từ GitHub, kiểm tra cú pháp PHP và kiểm thử bằng cơ sở dữ liệu giả riêng, sao lưu mã quản trị và SQLite, sau đó thay 9 tệp quản trị. Không cấu hình tự động triển khai mọi commit chưa kiểm thử. Script nằm ngoài thư mục website khi cài trên hosting.
-
-## Kiểm thử
-
-PHP 8.1+, PDO SQLite, SQLite3 và mbstring. `php test-sheet.php` chỉ chạy CLI, tạo dữ liệu giả trong thư mục tạm riêng, kiểm tra tạo đơn, SĐT, trường vận chuyển, rollback khi xung đột, quyền nhân viên và thu hồi phiên. Không chạy trên cơ sở dữ liệu thật.
+Chạy deploy-workbook.sh COMMIT_SHA trên hosting. Script tải commit cố định, chạy kiểm thử PHP với SQLite trong bộ nhớ, npm ci theo lockfile, build asset tự host, tạo thông báo giấy phép, sao lưu mã quản trị và SQLite rồi triển khai riêng phần bảng tính. Các tệp cấu hình bí mật, cơ sở dữ liệu và dữ liệu khách hàng không được commit. Bản v1 được ghi lại trong README-v1.md.

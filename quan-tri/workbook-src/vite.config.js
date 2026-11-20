@@ -1,0 +1,1 @@
+import {defineConfig} from 'vite';export default defineConfig({base:'./',build:{assetsInlineLimit:0,rollupOptions:{output:{entryFileNames:'assets/editor.js',assetFileNames:'assets/[name][extname]'}}}});
