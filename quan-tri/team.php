@@ -38,3 +38,5 @@ function team_save(array $data): void {
  try{if($id){$sql='UPDATE staff SET username=?,name=?,rights=?,group_id=?,active=?,version=?';if($password!==''){$sql.=',password_hash=?';$args[]=password_hash($password,PASSWORD_DEFAULT);}$sql.=' WHERE id=?';$args[]=$id;}else{$sql='INSERT INTO staff(username,name,rights,group_id,active,version,password_hash,created_at) VALUES(?,?,?,?,?,?,?,?)';$args[]=password_hash($password,PASSWORD_DEFAULT);$args[]=gmdate('c');}$db->prepare($sql)->execute($args);}catch(PDOException $e){if((string)$e->getCode()==='23000')throw new RuntimeException('Tên đăng nhập đã tồn tại.',409);throw $e;}
 }
 
+
+function team_require_web_export(): void {if(!team_identity()||!team_identity()['owner'])throw new RuntimeException('Chỉ quản trị viên gốc được xuất dữ liệu ĐƠN WEB.',403);}
