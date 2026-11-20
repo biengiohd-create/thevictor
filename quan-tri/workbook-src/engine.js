@@ -18,3 +18,4 @@ import { UniverSheetsConditionalFormattingPreset } from '@univerjs/preset-sheets
 import ConditionalFormattingVi from '@univerjs/preset-sheets-conditional-formatting/locales/vi-VN';
 import '@univerjs/preset-sheets-conditional-formatting/lib/index.css';
 export function createEditor(snapshot){const {univerAPI}=createUniver({locale:LocaleType.VI_VN,locales:{[LocaleType.VI_VN]:mergeLocales(CoreVi,FilterVi,SortVi,FindReplaceVi,DataValidationVi,ConditionalFormattingVi)},presets:[UniverSheetsCorePreset({container:'editor',header:true,toolbar:true,formulaBar:true,footer:true}),UniverSheetsFilterPreset(),UniverSheetsSortPreset(),UniverSheetsFindReplacePreset(),UniverSheetsDataValidationPreset(),UniverSheetsConditionalFormattingPreset()]});const workbook=univerAPI.createWorkbook(snapshot);return {api:univerAPI,workbook};}
+
