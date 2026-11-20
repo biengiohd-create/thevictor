@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once is_file(dirname(__DIR__).'/api/stats-lib.php')?dirname(__DIR__).'/api/stats-lib.php':dirname(__DIR__,2).'/vinahost-source/stats-lib.php';
-const ADMIN_STATUSES=['pending_confirmation'=>'Chờ xác nhận','pending_quote'=>'Chờ báo giá','confirmed'=>'Đã xác nhận','packing'=>'Đang chuẩn bị','shipping'=>'Đang giao','completed'=>'Hoàn tất','cancelled'=>'Đã hủy'];
+const ADMIN_STATUSES=['pending_confirmation'=>'Chờ xác nhận','ok'=>'OK','knm'=>'KNM','thue_bao'=>'THUÊ BAO','ko_mua'=>'KO MUA'];
 function admin_private(): string {return PHP_SAPI==='cli'&&defined('VICTOR_ADMIN_TEST_DIR')?VICTOR_ADMIN_TEST_DIR:dirname(__DIR__,2).'/thevictor-private';}
 function h($value): string {return htmlspecialchars((string)$value,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8');}
 function admin_headers(): void {header('Cache-Control: no-store, private');header('X-Robots-Tag: noindex, nofollow');header('X-Content-Type-Options: nosniff');header('Referrer-Policy: no-referrer');header('X-Frame-Options: DENY');header("Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'none'");}

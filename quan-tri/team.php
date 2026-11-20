@@ -13,6 +13,7 @@ function team_identity(): ?array {
 }
 function team_can(string $right): bool {$u=team_identity();return $u&&($u['owner']||in_array($right,$u['rights'],true));}
 function team_require(string $right): void {if(!team_can($right))throw new RuntimeException('Bạn chưa được cấp quyền thực hiện thao tác này.',403);}
+function team_require_owner(): void {$u=team_identity();if(!$u||!$u['owner'])throw new RuntimeException('Nhân viên không được chỉnh sửa hoặc xóa thông tin đơn website gốc.',403);}
 function team_users(): array {$u=team_identity();if(!$u||!$u['owner'])throw new RuntimeException('Chỉ chủ cửa hàng được quản lý nhân viên.',403);return team_db()->query('SELECT id,username,name,rights,active,created_at FROM staff ORDER BY id')->fetchAll();}
 function team_save(array $data): void {
  team_users();$db=team_db();$id=$data['id']??0;if(!is_int($id)||$id<0)throw new RuntimeException('Tài khoản không hợp lệ.',400);

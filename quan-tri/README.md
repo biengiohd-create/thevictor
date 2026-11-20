@@ -8,7 +8,7 @@ Chọn ô rồi gõ thay nội dung; bấm đúp hoặc F2 đặt con trỏ sử
 
 ## Đơn website và bản làm việc
 
-Lần mở đầu tiên sao chép tối đa 10.000 đơn hiện có, bao gồm trường vận hành đã nhập ở v1. Nút Nhận đơn website mới thêm những đơn chưa nhận. Mã đơn đã nhận được theo dõi riêng nên không nhập lặp dòng mà nhân viên đã xóa. Bảng nhân viên là bản làm việc độc lập: sửa hoặc xóa hàng không sửa hoặc xóa đơn website gốc. Tạo đơn có nội dung vẫn có nghĩa là đã tạo và đẩy vận chuyển; không tự gọi đơn vị giao hàng.
+Đơn website chỉ vào khu Đơn hàng, mặc định Chờ xác nhận. Nhân viên được copy, chọn Chờ xác nhận / OK / KNM / THUÊ BAO / KO MUA và bấm LÊN BẢNG; máy chủ chặn sửa thông tin hoặc xóa đơn gốc, kể cả qua API cũ. LÊN BẢNG chuyển riêng từng đơn vào dòng trống đầu tiên, ánh xạ theo tiêu đề cột, bỏ qua dòng chứa giá trị, công thức hoặc rich text. Mã website, thời gian đặt, tuổi, ghi chú nội bộ và phí vận chuyển được thêm vào các cột bổ sung. Snapshot và dấu đã chuyển lưu trong cùng giao dịch; bấm lại không nhập trùng. Những dòng đã nhận trước bản cập nhật được giữ nguyên và đánh dấu đã lên bảng. Bảng nhân viên là bản làm việc độc lập: sửa hoặc xóa hàng không sửa hoặc xóa đơn website gốc. Tạo đơn có nội dung vẫn có nghĩa là đã tạo và đẩy vận chuyển; không tự gọi đơn vị giao hàng.
 
 ## Quyền, lưu trữ và phục hồi
 
@@ -20,4 +20,5 @@ CSV chỉ có giá trị hiển thị của tab hiện tại; JSON giữ cả c�
 
 ## Triển khai
 
-Chạy deploy-workbook.sh COMMIT_SHA trên hosting. Script tải commit cố định, chạy kiểm thử PHP với SQLite trong bộ nhớ, npm ci theo lockfile, build asset tự host, tạo thông báo giấy phép, sao lưu mã quản trị và SQLite rồi triển khai riêng phần bảng tính. Các tệp cấu hình bí mật, cơ sở dữ liệu và dữ liệu khách hàng không được commit. Bản v1 được ghi lại trong README-v1.md.
+Chạy deploy-inbox.sh COMMIT_SHA trên hosting. Script tải commit cố định, chạy kiểm thử PHP với SQLite trong bộ nhớ, npm ci theo lockfile, build asset tự host, tạo thông báo giấy phép, sao lưu mã quản trị và SQLite rồi triển khai riêng phần bảng tính. Các tệp cấu hình bí mật, cơ sở dữ liệu và dữ liệu khách hàng không được commit. Bản v1 được ghi lại trong README-v1.md.
+
