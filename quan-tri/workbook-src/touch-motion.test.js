@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {TouchMotion,coastStep} from './touch-motion.js';
+test('tap and small finger jitter do not become scrolling',()=>{const m=new TouchMotion();m.begin(100,100,0);assert.equal(m.move(103,104,20),null);assert.equal(m.dragged,false);});
+test('upward swipe scrolls toward lower rows with bounded release speed',()=>{const m=new TouchMotion();m.begin(100,400,0);const d=m.move(95,300,16);assert.equal(d.dy,100);assert.equal(m.dragged,true);assert.ok(m.vy>0&&m.vy<=3.5);});
+test('inertia slows down and preserves direction',()=>{const a=coastStep(1,-2,16),b=coastStep(a.vx,a.vy,16);assert.ok(a.dx>0&&a.dy<0&&b.vx<a.vx&&Math.abs(b.vy)<Math.abs(a.vy));});
+test('coasting distance is independent of display frame rate',()=>{function distance(dt,n){let vx=2,vy=3,x=0,y=0;for(let i=0;i<n;i++){const s=coastStep(vx,vy,dt);x+=s.dx;y+=s.dy;vx=s.vx;vy=s.vy;}return [x,y];}const a=distance(16,20),b=distance(32,10);assert.ok(Math.abs(a[0]-b[0])<1e-8&&Math.abs(a[1]-b[1])<1e-8);});

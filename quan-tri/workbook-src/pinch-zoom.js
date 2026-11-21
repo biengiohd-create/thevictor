@@ -1,0 +1,1 @@
+export function pinchZoom(base,initialDistance,currentDistance){if(!Number.isFinite(initialDistance)||initialDistance<=0||!Number.isFinite(currentDistance))return base;return Math.max(.25,Math.min(3,base*currentDistance/initialDistance));}
