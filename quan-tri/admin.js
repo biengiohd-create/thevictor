@@ -40,9 +40,9 @@ orderHeaders.forEach((th,id)=>{if(!id)return;const text=th.firstChild;if(!text||
 matchMedia('(max-width:700px)').addEventListener('change',()=>{endColumnDrag(false);applyColumnOrder()});window.addEventListener('blur',()=>endColumnDrag(false));document.addEventListener('keydown',e=>{if(e.key==='Escape')endColumnDrag(false)});
 $('resetColumns').textContent='Đặt lại bố cục cột';$('resetColumns').onclick=()=>{endColumnDrag(false);columnWidths=columnDefaults.slice();columnOrder=orderColumnIds.slice();applyColumns();applyColumnOrder();saveColumns();saveColumnOrder()};applyColumnOrder();
 
-function duplicatePhoneLabel(order){const refs=(order.duplicateOrders||[]).map(x=>x.number?String(x.number):x.code);return refs.length?'Trùng SĐT đơn '+refs.join(', '):'Trùng SĐT'}
+function duplicatePhoneLabel(order){const refs=(order.duplicateOrders||[]).map(x=>x.code);return refs.length?'Trùng SĐT đơn '+refs.join(', '):'Trùng SĐT'}
 
-function duplicateIpLabel(order){return 'Trùng IP đơn '+(order.duplicateIpOrders||[]).map(x=>x.number?String(x.number):x.code).join(', ')}
+function duplicateIpLabel(order){return 'Trùng IP đơn '+(order.duplicateIpOrders||[]).map(x=>x.code).join(', ')}
 
 function inboxStatusCell(o){return '<select class="inbox-status status-'+esc(o.status)+'" aria-label="Trạng thái đơn '+esc(o.code)+'" data-inbox-status="'+esc(o.code)+'" data-version="'+o.version+'" '+(!inboxOwner&&!inboxRights.includes('inbox_status')?'disabled':'')+'>'+(!Object.hasOwn(states,o.status)?'<option selected disabled>'+esc(o.status)+'</option>':'')+Object.entries(states).map(([key,label])=>'<option value="'+key+'" '+(o.status===key?'selected':'')+'>'+esc(label)+'</option>').join('')+'</select>';}
 async function inboxPost(body){return request('',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({csrf:document.querySelector('meta[name=csrf-token]').content,...body})});}
