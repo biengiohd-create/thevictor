@@ -6,7 +6,7 @@ export function ensureSerialColumn(workbook,editable,api,initialize=true){
  if(String(sheet.getRange(0,offset).getValue()??'').trim().toUpperCase()!=='STT'){
   if(!initialize||Object.values(workbook.save().sheets[sid].cellData?.[0]??{}).some(c=>String(c?.v??'').trim().toUpperCase()==='STT'))return false;
   sheet.insertColumnsBefore(offset,1);sheet.setColumnWidth(offset,68);
-  sheet.getRange(0,offset).setValue('STT').setBackgroundColor('#00e500').setFontWeight('bold');changed=true;
+  sheet.getRange(0,offset).setValue('STT').setBackgroundColor('#dfede5').setFontWeight('bold');changed=true;
  }
  const cells=workbook.save().sheets[sid].cellData??{};
  for(const [row,data]of Object.entries(cells)){
