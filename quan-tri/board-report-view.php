@@ -1,1 +1,1 @@
-<section class="board-reports"><div class="page-heading"><div><p class="eyebrow">DỮ LIỆU TỪ BẢNG ĐƠN</p><h1>BÁO CÁO</h1></div></div><div id="boardReports"></div><details class="report-issues"><summary id="reportIssueCount">Kiểm tra dữ liệu</summary><div id="reportIssues"></div></details></section>
+<section class="board-reports"><div class="page-heading"><div><p class="eyebrow">DỮ LIỆU TỪ BẢNG ĐƠN</p><h1>BÁO CÁO</h1></div><a class="secondary" href="quality.php">Kiểm tra sản phẩm &amp; đơn đổi</a></div><div id="boardReports"></div></section>
