@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-const TEAM_RIGHTS=['view'=>'Xem ĐƠN WEB / BẢNG ĐƠN','edit'=>'Thêm, sửa, xóa trong BẢNG ĐƠN','inbox_status'=>'Đổi trạng thái ĐƠN WEB','board'=>'LÊN BẢNG','export'=>'Xuất CSV','history'=>'Xem lịch sử','restore'=>'Khôi phục BẢNG ĐƠN','manage_staff'=>'Quản lý nhân viên','manage_groups'=>'Cấu hình nhóm quyền','analytics'=>'Xem thống kê'];
+const TEAM_RIGHTS=['view'=>'Xem ĐƠN WEB / BẢNG ĐƠN','edit'=>'Thêm, sửa, xóa trong BẢNG ĐƠN','inbox_status'=>'Đổi trạng thái ĐƠN WEB','board'=>'LÊN BẢNG','export'=>'Xuất CSV','history'=>'Xem lịch sử','restore'=>'Khôi phục BẢNG ĐƠN','manage_staff'=>'Quản lý nhân viên','manage_groups'=>'Cấu hình nhóm quyền'];
 const TEAM_GROUPS=['manager'=>'QUẢN LÝ','page'=>'TRỰC PAGE','care'=>'CARE ĐƠN'];
 function team_db(): PDO {
  static $db=null;if($db instanceof PDO)return $db;
@@ -40,3 +40,5 @@ function team_save(array $data): void {
 
 
 function team_require_web_export(): void {if(!team_identity()||!team_identity()['owner'])throw new RuntimeException('Chỉ quản trị viên gốc được xuất dữ liệu ĐƠN WEB.',403);}
+
+function team_require_report(): void {if(!team_identity()||!team_identity()['owner'])throw new RuntimeException('Chỉ quản trị viên gốc được xem Báo cáo.',403);}

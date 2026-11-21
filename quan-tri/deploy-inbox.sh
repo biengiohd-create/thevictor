@@ -22,6 +22,7 @@ php "$source_dir/quan-tri/patch-orders-default.php" "$release/orders.php"
 php -l "$release/orders.php"
 cd "$source_dir/quan-tri/workbook-src"
 npm ci --ignore-scripts --no-audit --no-fund --cache "$release/npm-cache"
+node --test touch-motion.test.js
 node --max-old-space-size=2048 node_modules/vite/bin/vite.js build --configLoader runner
 node notices.cjs
 backup=$(mktemp -d "$root/victor-inbox-backup.XXXXXX")
@@ -41,5 +42,6 @@ done
 install -m 0644 "$release/orders.php" "$root/public_html/api/orders.php.new"
 mv "$root/public_html/api/orders.php.new" "$root/public_html/api/orders.php"
 printf 'INBOX DEPLOYED %s\nBACKUP %s\n' "$revision" "$backup"
+
 
 
