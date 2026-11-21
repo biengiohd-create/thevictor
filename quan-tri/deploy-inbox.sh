@@ -37,12 +37,18 @@ mkdir -p "$assets"
 cp -a dist/assets/. "$assets/"
 find "$assets" -type d -exec chmod 0755 {} +
 find "$assets" -type f -exec chmod 0644 {} +
-for file in notifications-state.js password-lib.php password.php notifications-lib.php notifications.php notifications.js notifications.css payroll-lib.php activity.js people-lib.php people-api.php people.php people.js people.css identity-view.php team.php lib.php workbook-lib.php inbox-flow.php api.php sheet-api.php workbook-api.php workbook-export.php team-ui.js admin.css admin.js spreadsheet-view.php index.php; do
+for file in payroll-runs.php notifications-state.js password-lib.php password.php notifications-lib.php notifications.php notifications.js notifications.css payroll-lib.php activity.js people-lib.php people-api.php people.php people.js people.css identity-view.php team.php lib.php workbook-lib.php inbox-flow.php api.php sheet-api.php workbook-api.php workbook-export.php team-ui.js admin.css admin.js spreadsheet-view.php index.php; do
  install -m 0644 "$source_dir/quan-tri/$file" "$root/public_html/quan-tri/$file.new"
  mv "$root/public_html/quan-tri/$file.new" "$root/public_html/quan-tri/$file"
 done
 install -m 0644 "$release/orders.php" "$root/public_html/api/orders.php.new"
 mv "$root/public_html/api/orders.php.new" "$root/public_html/api/orders.php"
+install -m 0700 "$source_dir/quan-tri/payroll-cron.php" "$root/thevictor-private/payroll-cron.php"
+php_bin=$(type -P php)
+flock_bin=$(type -P flock)
+cron_line="15 * * * * $flock_bin -n $root/thevictor-private/payroll-cron.lock $php_bin $root/thevictor-private/payroll-cron.php >> $root/thevictor-private/payroll-cron.log 2>&1 # VICTOR_PAYROLL_JOB"
+{ crontab -l 2>/dev/null | sed '/# VICTOR_PAYROLL_JOB$/d' || true; printf '%s\n' "$cron_line"; } | crontab -
+printf 'PAYROLL CRON INSTALLED\n'
 printf 'INBOX DEPLOYED %s\nBACKUP %s\n' "$revision" "$backup"
 
 
