@@ -59,8 +59,8 @@ function people_audit_list(array $input): array {
 }
 function people_cell(array $cell): array {unset($cell['custom']);if(!empty($cell['f']))unset($cell['v']);return $cell;}
 function people_workbook_diff(?array $before,array $after): array {
- $changes=[];$before??=['sheets'=>[]];foreach(array_unique(array_merge(array_keys($before['sheets']??[]),array_keys($after['sheets']??[]))) as $id){$old=$before['sheets'][$id]??[];$new=$after['sheets'][$id]??[];$label=$new['name']??$old['name']??$id;
- if(!$old||!$new)$changes[]=['sheet'=>$label,'field'=>'Trang tính','before'=>$old?'Tồn tại':null,'after'=>$new?'Tồn tại':null];
+ $changes=[];$before??=['sheets'=>[]];foreach(array_unique(array_merge(array_keys($before['sheets']??[]),array_keys($after['sheets']??[]))) as $id){$old=$before['sheets'][$id]??[];$new=$after['sheets'][$id]??[];$label=$new['name']??$old['name']??$id;if($old===$new)continue;
+ if(!$old||!$new){$changes[]=['sheet'=>$label,'field'=>'Trang tính','before'=>$old?'Tồn tại':null,'after'=>$new?'Tồn tại':null,'rows'=>count($new['cellData']??$old['cellData']??[])];continue;}
  foreach(array_unique(array_merge(array_keys($old['cellData']??[]),array_keys($new['cellData']??[]))) as $r)foreach(array_unique(array_merge(array_keys($old['cellData'][$r]??[]),array_keys($new['cellData'][$r]??[]))) as $c){$a=people_cell($old['cellData'][$r][$c]??[]);$b=people_cell($new['cellData'][$r][$c]??[]);if($a!=$b){$col='';for($i=(int)$c+1;$i>0;$i=intdiv($i-1,26))$col=chr(65+($i-1)%26).$col;$changes[]=['sheet'=>$label,'cell'=>$col.((int)$r+1),'before'=>$a,'after'=>$b];}}
  unset($old['cellData'],$new['cellData']);foreach(array_unique(array_merge(array_keys($old),array_keys($new))) as $key)if(($old[$key]??null)!=($new[$key]??null))$changes[]=['sheet'=>$label,'field'=>$key,'before'=>$old[$key]??null,'after'=>$new[$key]??null];}
  foreach(array_unique(array_merge(array_keys($before),array_keys($after))) as $key)if($key!=='sheets'&&($before[$key]??null)!=($after[$key]??null))$changes[]=['field'=>$key,'before'=>$before[$key]??null,'after'=>$after[$key]??null];return $changes;
