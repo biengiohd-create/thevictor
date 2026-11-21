@@ -17,6 +17,7 @@ try{
  [$placed,$line]=inbox_place($fresh,['code'=>'TV-333333333333','values'=>array_pad([639000,'Fixture','0320000000'],17,'')]);
  assertion($line===2,'derived STT formula does not occupy an otherwise empty row');
  assertion($placed['sheets']['orders']['cellData'][1][0]['f']==='=ROW()-1'&&$placed['sheets']['orders']['cellData'][1][3]['v']==='0320000000'&&$placed['sheets']['orders']['cellData'][1][1]['v']===639000,'STT column retains transfer mapping and serial formula');
+ $limited=wb_empty();$limited['sheets']['orders']['rowCount']=2;$limited['sheets']['orders']['cellData'][1][0]=['v'=>1];reject(fn()=>inbox_place($limited,['code'=>'TV-444444444444','values'=>array_pad([639000,'Fixture','0320000000'],17,'')]),400,'full sheet requires employee to add rows');$limited['sheets']['orders']['rowCount']=3;[$expanded,$expandedLine]=inbox_place($limited,['code'=>'TV-444444444444','values'=>array_pad([639000,'Fixture','0320000000'],17,'')]);assertion($expandedLine===3&&$expanded['sheets']['orders']['rowCount']===3,'transfer uses manually added row without auto-expanding the grid');
 }finally{foreach(glob($root.'/*') as $file)unlink($file);rmdir($root);}
 
 
