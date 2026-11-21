@@ -17,6 +17,7 @@ php "$source_dir/quan-tri/test-workbook.php"
 php "$source_dir/quan-tri/test-sheet.php"
 php "$source_dir/quan-tri/test-inbox.php"
 php "$source_dir/quan-tri/test-team.php"
+php "$source_dir/quan-tri/test-people.php"
 cp "$root/public_html/api/orders.php" "$release/orders.php"
 php "$source_dir/quan-tri/patch-orders-default.php" "$release/orders.php"
 php -l "$release/orders.php"
@@ -35,7 +36,7 @@ mkdir -p "$assets"
 cp -a dist/assets/. "$assets/"
 find "$assets" -type d -exec chmod 0755 {} +
 find "$assets" -type f -exec chmod 0644 {} +
-for file in team.php lib.php workbook-lib.php inbox-flow.php api.php sheet-api.php workbook-api.php workbook-export.php team-ui.js admin.css admin.js spreadsheet-view.php index.php; do
+for file in payroll-lib.php activity.js people-lib.php people-api.php people.php people.js people.css identity-view.php team.php lib.php workbook-lib.php inbox-flow.php api.php sheet-api.php workbook-api.php workbook-export.php team-ui.js admin.css admin.js spreadsheet-view.php index.php; do
  install -m 0644 "$source_dir/quan-tri/$file" "$root/public_html/quan-tri/$file.new"
  mv "$root/public_html/quan-tri/$file.new" "$root/public_html/quan-tri/$file"
 done
