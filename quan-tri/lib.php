@@ -19,6 +19,8 @@ require_once __DIR__.'/people-lib.php';
 require_once __DIR__.'/payroll-lib.php';
 require_once __DIR__.'/password-lib.php';
 require_once __DIR__.'/payroll-runs.php';
+require_once __DIR__.'/hr-access.php';
+require_once __DIR__.'/leave-lib.php';
 function admin_logged_in(): bool {return team_identity()!==null;}
 function admin_csrf(): void {if(!is_string($_POST['csrf']??null)||!hash_equals($_SESSION['csrf']??'',$_POST['csrf']))throw new RuntimeException('Phiên làm việc đã thay đổi. Vui lòng tải lại trang.',403);}
 function admin_login(string $username,string $password): bool {

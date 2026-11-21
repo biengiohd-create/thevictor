@@ -1,0 +1,1 @@
+<a href="people.php?tab=attendance" <?=($tab??'')==='attendance'?'aria-current="page"':''?>>CHẤM CÔNG</a><a href="people.php?tab=payroll" <?=($tab??'')==='payroll'?'aria-current="page"':''?>>BẢNG LƯƠNG</a><a href="people.php?tab=schedule" <?=($tab??'')==='schedule'?'aria-current="page"':''?>>LỊCH NGHỈ</a>

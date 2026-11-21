@@ -3,3 +3,5 @@
 .profile-fields{display:grid;gap:16px;padding:0;border:0}.profile-fields:disabled{opacity:.7}
 
 .reset-link-input{width:100%;margin:10px 0}.password-note{font-size:13px;color:#657e6d}
+
+.leave-actions{display:flex;gap:6px;flex-wrap:wrap}.leave-actions button{padding:7px 10px;white-space:nowrap}.form-actions{display:flex;gap:10px;flex-wrap:wrap}
