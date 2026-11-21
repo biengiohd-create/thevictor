@@ -1,1 +1,2 @@
-import {defineConfig} from 'vite';export default defineConfig({base:'./',build:{assetsInlineLimit:0,rollupOptions:{output:{entryFileNames:'assets/editor.js',assetFileNames:'assets/[name][extname]'}}}});
+import {dailySheetNamePlugin} from './sheet-name-policy.js';
+import {defineConfig} from 'vite';export default defineConfig({base:'./',plugins:[dailySheetNamePlugin()],build:{assetsInlineLimit:0,rollupOptions:{output:{entryFileNames:'assets/editor.js',assetFileNames:'assets/[name][extname]'}}}});
