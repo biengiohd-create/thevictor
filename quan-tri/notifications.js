@@ -1,4 +1,4 @@
-import {freshNoticeIds} from './notifications-state.js?v=17';
+import {freshNoticeIds} from './notifications-state.js?v=18';
 const badges=[];for(const a of document.querySelectorAll('nav a'))if(a.textContent.trim()==='ĐƠN WEB'){const span=document.createElement('span');span.className='order-count';span.hidden=true;span.setAttribute('role','status');a.append(span);badges.push(span);}
 const host=document.querySelector('.account-tools');const sound=document.createElement('button');sound.type='button';sound.className='order-sound';sound.textContent='🔔';sound.title='Bật âm báo đơn mới';sound.setAttribute('aria-label','Bật âm báo đơn mới');host?.prepend(sound);
 let ctx,unlocked=false,observed=0,userKey='',pending=[],running=false,stopped=false;
