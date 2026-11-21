@@ -1,0 +1,3 @@
+<?php require __DIR__.'/lib.php';require __DIR__.'/notifications-lib.php';admin_init();header('Content-Type: application/json; charset=utf-8');
+try{if(!admin_logged_in())throw new RuntimeException('Vui lòng đăng nhập.',401);team_require('view');$u=team_identity();session_write_close();$db=admin_db();$since=max(0,(int)($_GET['since']??0));echo json_encode(['user'=>$u['username']]+notifications_state($db,$since),JSON_THROW_ON_ERROR);
+}catch(Throwable $e){$code=in_array($e->getCode(),[401,403],true)?$e->getCode():500;http_response_code($code);echo json_encode(['error'=>$code===500?'Chưa lấy được thông báo.':$e->getMessage()]);}

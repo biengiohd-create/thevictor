@@ -1,0 +1,4 @@
+<?php
+function notifications_state(PDO $db,int $since): array {
+ $latest=(int)$db->query('SELECT COALESCE(max(rowid),0) FROM orders')->fetchColumn();$count=(int)$db->query("SELECT count(*) FROM orders o WHERE o.status='pending_confirmation' AND NOT EXISTS(SELECT 1 FROM order_admin_trash t WHERE t.code=o.code)")->fetchColumn();$q=$db->prepare("SELECT rowid AS id FROM orders o WHERE rowid>? AND status='pending_confirmation' AND NOT EXISTS(SELECT 1 FROM order_admin_trash t WHERE t.code=o.code) ORDER BY rowid LIMIT 100");$q->execute([max(0,$since)]);return ['latest'=>$latest,'pending'=>$count,'new'=>array_map('intval',$q->fetchAll(PDO::FETCH_COLUMN))];
+}

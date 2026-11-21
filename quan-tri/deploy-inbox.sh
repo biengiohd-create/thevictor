@@ -24,6 +24,7 @@ php -l "$release/orders.php"
 cd "$source_dir/quan-tri/workbook-src"
 npm ci --ignore-scripts --no-audit --no-fund --cache "$release/npm-cache"
 node --test touch-motion.test.js
+node --test "$source_dir/quan-tri/notifications-state.test.js"
 node --max-old-space-size=2048 node_modules/vite/bin/vite.js build --configLoader runner
 node notices.cjs
 backup=$(mktemp -d "$root/victor-inbox-backup.XXXXXX")
@@ -36,7 +37,7 @@ mkdir -p "$assets"
 cp -a dist/assets/. "$assets/"
 find "$assets" -type d -exec chmod 0755 {} +
 find "$assets" -type f -exec chmod 0644 {} +
-for file in payroll-lib.php activity.js people-lib.php people-api.php people.php people.js people.css identity-view.php team.php lib.php workbook-lib.php inbox-flow.php api.php sheet-api.php workbook-api.php workbook-export.php team-ui.js admin.css admin.js spreadsheet-view.php index.php; do
+for file in notifications-state.js password-lib.php password.php notifications-lib.php notifications.php notifications.js notifications.css payroll-lib.php activity.js people-lib.php people-api.php people.php people.js people.css identity-view.php team.php lib.php workbook-lib.php inbox-flow.php api.php sheet-api.php workbook-api.php workbook-export.php team-ui.js admin.css admin.js spreadsheet-view.php index.php; do
  install -m 0644 "$source_dir/quan-tri/$file" "$root/public_html/quan-tri/$file.new"
  mv "$root/public_html/quan-tri/$file.new" "$root/public_html/quan-tri/$file"
 done

@@ -11,12 +11,13 @@ function admin_init(): void {
  if(!empty($_SESSION['admin'])&&(time()-($_SESSION['last_seen']??0)>1800||time()-($_SESSION['login_at']??0)>28800)){people_session_end('expired',(int)($_SESSION['last_seen']??time()));$_SESSION=[];session_regenerate_id(true);}
  if(!empty($_SESSION['admin']))$_SESSION['last_seen']=time();
  if(!empty($_SESSION['admin'])){if(admin_logged_in())people_session_touch();else people_session_end('revoked',(int)($_SESSION['last_seen']??time()));}
- if(empty($_SESSION['csrf']))$_SESSION['csrf']=bin2hex(random_bytes(32));
+ if(empty($_SESSION['csrf']))$_SESSION['csrf']=bin2hex(random_bytes(32));people_onboarding_guard();
 }
 function admin_config(): ?array {$file=admin_private().'/admin-config.json';return is_file($file)?json_decode(file_get_contents($file),true,512,JSON_THROW_ON_ERROR):null;}
 require_once __DIR__.'/team.php';
 require_once __DIR__.'/people-lib.php';
 require_once __DIR__.'/payroll-lib.php';
+require_once __DIR__.'/password-lib.php';
 function admin_logged_in(): bool {return team_identity()!==null;}
 function admin_csrf(): void {if(!is_string($_POST['csrf']??null)||!hash_equals($_SESSION['csrf']??'',$_POST['csrf']))throw new RuntimeException('Phiên làm việc đã thay đổi. Vui lòng tải lại trang.',403);}
 function admin_login(string $username,string $password): bool {
