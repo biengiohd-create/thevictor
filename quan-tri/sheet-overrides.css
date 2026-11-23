@@ -1,3 +1,3 @@
 /* Numeric identifiers such as phone numbers intentionally remain text. */
-#editor button[aria-label="Lỗi: Số được lưu trữ dưới dạng văn bản"],
-#editor button[aria-label="Error: Number stored as text"]{display:none!important}
+button[aria-label="Lỗi: Số được lưu trữ dưới dạng văn bản"],
+button[aria-label="Error: Number stored as text"]{display:none!important}
