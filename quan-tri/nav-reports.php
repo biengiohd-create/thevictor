@@ -1,0 +1,1 @@
+<details class="nav-group"><summary>BÁO CÁO &amp; KHO</summary><div class="nav-group-menu"><a href="/quan-tri/?tab=analytics" <?=!empty($analyticsTab)?'aria-current="page"':''?>>BÁO CÁO</a><a href="/quan-tri/?tab=stock" <?=!empty($inventoryTab)?'aria-current="page"':''?>>TỒN KHO</a></div></details>
