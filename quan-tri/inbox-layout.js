@@ -1,5 +1,6 @@
 const panel=document.querySelector('body[data-workspace="orders"] .orders-panel');
 if(panel){
+ const total=document.querySelector('.web-total-row'),actions=document.querySelector('.workspace-actions');if(total&&actions){total.append(actions);document.querySelector('.workspace-nav-row').hidden=true;}
  const wrap=panel.querySelector('.table-wrap'),table=document.getElementById('ordersTable'),pagination=panel.querySelector('.pagination'),select=document.getElementById('ordersPerPage');
  const rail=document.createElement('div'),width=document.createElement('div');rail.className='web-horizontal-scroll';rail.setAttribute('role','region');rail.setAttribute('aria-label','Cuộn ngang danh sách đơn');rail.tabIndex=0;rail.append(width);document.body.append(rail);
  let syncing=false,frame;
