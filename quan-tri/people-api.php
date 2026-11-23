@@ -1,8 +1,8 @@
-<?php require __DIR__.'/lib.php';admin_init();
+<?php require __DIR__.'/lib.php';require_once __DIR__.'/staff-insights-lib.php';admin_init();
 function people_reply(array $v,int $code=200): never {http_response_code($code);header('Content-Type: application/json; charset=utf-8');echo json_encode($v,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);exit;}
 try{if(!admin_logged_in())throw new RuntimeException('Vui lòng đăng nhập lại.',401);$u=team_identity();$method=$_SERVER['REQUEST_METHOD'];$action=$_GET['action']??'';if(!$u['owner']&&!$u['profileComplete']&&$method==='GET'&&$action!=='profile')throw new RuntimeException('Cần hoàn thiện hồ sơ cá nhân.',403);
  if($method==='GET'){
-  if($action==='profile')people_reply(['user'=>$u,'profile'=>people_profile_get($u)]);
+  if($action==='insights')people_reply(staff_insights($_GET));if($action==='profile')people_reply(['user'=>$u,'profile'=>people_profile_get($u)]);
   if($action==='recovery')people_reply(['rows'=>people_recovery_list()]);
   if($action==='policy'){people_require_owner();people_reply(['policy'=>payroll_policy()]);}
   if(in_array($action,['schedule','leave'],true))people_reply(leave_list($_GET));
