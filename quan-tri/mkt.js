@@ -1,5 +1,5 @@
 import {periodOptions,bindPeriod} from './date-presets.js';
-import {setupScreenImport} from './mkt-screen.js';
+import {setupScreenImport} from './mkt-screen.js?v=49';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>v==null?'—':new Intl.NumberFormat('vi-VN',{maximumFractionDigits:0}).format(v)+' ₫',num=v=>v==null?'—':new Intl.NumberFormat('vi-VN').format(v);
 const csrf=document.querySelector('meta[name=csrf-token]')?.content,today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).format(new Date());

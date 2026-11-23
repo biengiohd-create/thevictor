@@ -2,7 +2,7 @@
 export function wordsToTable(tsv){
  const words=tsv.split(/\r?\n/).slice(1).map(line=>{const c=line.split('\t');return {level:+c[0],x:+c[6],y:+c[7],w:+c[8],h:+c[9],confidence:+c[10],text:c.slice(11).join('\t').trim()};}).filter(w=>w.level===5&&w.text&&w.confidence>=0);
  const lines=[];for(const w of words.sort((a,b)=>a.y-b.y||a.x-b.x)){let l=lines.find(l=>Math.abs(l.y-w.y)<Math.max(5,Math.min(l.h,w.h)*.55));if(!l)lines.push(l={y:w.y,h:w.h,words:[]});l.words.push(w);}
- return lines.sort((a,b)=>a.y-b.y).map(l=>{let end=0;return l.words.sort((a,b)=>a.x-b.x).map((w,i)=>{const gap=w.x-end;end=w.x+w.w;return (i?(gap>Math.max(16,w.h*1.2)?'\t':' '):'')+w.text;}).join('');}).join('\n');
+ const rows=[];for(const l of lines.sort((a,b)=>a.y-b.y)){const segments=[];let end=0;for(const w of l.words.sort((a,b)=>a.x-b.x)){const gap=w.x-end;end=w.x+w.w;if(segments.length&&gap<=Math.max(16,w.h*1.2))segments.at(-1).text+=' '+w.text;else segments.push({x:w.x,text:w.text});}const previous=rows.at(-1);if(segments.length===1&&previous?.segments.length>=2&&l.y-previous.bottom<=Math.max(l.h,previous.h)*1.8){const nearest=previous.segments.reduce((a,b)=>Math.abs(a.x-segments[0].x)<Math.abs(b.x-segments[0].x)?a:b);if(Math.abs(nearest.x-segments[0].x)<=Math.max(30,l.h*2)){nearest.text+=' '+segments[0].text;previous.bottom=l.y;continue;}}rows.push({segments,bottom:l.y,h:l.h});}return rows.map(r=>r.segments.map(s=>s.text).join('\t')).join('\n');
 }
 export function setupScreenImport({button,imageInput,host,output,status}){
  let workerPromise,source,selection,drag;
