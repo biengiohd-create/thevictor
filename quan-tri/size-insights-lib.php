@@ -3,7 +3,7 @@ declare(strict_types=1);
 require_once __DIR__.'/stock-matrix.php';
 function size_measurements(string $text):?array {
  $t=mb_strtolower(str_replace(',','.',$text),'UTF-8');$h=null;$w=null;
- if(preg_match('/(?:cao\s*)?([12])\s*m(?:ét)?\s*(\d{1,2})/u',$t,$m))$h=(int)$m[1]*100+(int)str_pad($m[2],2,'0',STR_PAD_RIGHT);
+ if(preg_match('/(?<![\d.])(?:cao\s*)?([12])\s*m(?:ét)?\s*(\d{1,2})/u',$t,$m))$h=(int)$m[1]*100+(int)str_pad($m[2],2,'0',STR_PAD_RIGHT);
  elseif(preg_match('/\b([12]\.\d{1,2})\s*m?/u',$t,$m))$h=(float)$m[1]*100;
  elseif(preg_match('/(?:cao\s*|\b)(1\d{2}|2[01]\d)\s*(?:cm)?/u',$t,$m))$h=(float)$m[1];
  if(preg_match('/(?:nặng|nang)\s*(\d{2,3}(?:\.\d+)?)/u',$t,$m)||preg_match('/(\d{2,3}(?:\.\d+)?)\s*(?:kg|kí|ki|ký|k)(?![\p{L}])/u',$t,$m))$w=(float)$m[1];
