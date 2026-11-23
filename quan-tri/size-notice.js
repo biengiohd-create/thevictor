@@ -1,0 +1,1 @@
+const badge=document.getElementById('sizeAlert');if(badge)fetch('size-insights.php?format=alerts',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(d=>{if(!d?.alerts)return;badge.hidden=false;badge.textContent='⚠ Size ('+d.alerts+')';badge.title=d.alerts+' mã có tỷ lệ hoàn trên 35%';}).catch(()=>{});
