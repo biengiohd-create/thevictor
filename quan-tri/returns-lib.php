@@ -47,6 +47,7 @@ function returns_list(PDO $db,int $before=0): array {
  $q=$db->prepare('SELECT * FROM return_messages'.($before?' WHERE id<?':'').' ORDER BY id DESC LIMIT 50');$q->execute($before?[$before]:[]);return array_map('returns_message',$q->fetchAll());
 }
 function returns_write(PDO $db,array $input,array $user): array {
+ if(!is_string($input['body']??null)||!is_string($input['requestKey']??null)||(isset($input['id'])&&!is_int($input['id']))||(isset($input['revision'])&&!is_int($input['revision'])))throw new RuntimeException('Nội dung yêu cầu không hợp lệ.',400);
  $body=trim((string)($input['body']??''));$key=(string)($input['requestKey']??'');$id=(int)($input['id']??0);
  if($body===''||strlen($body)>25000||!preg_match('/^[a-f0-9-]{36}$/D',$key))throw new RuntimeException('Nhập nội dung tối đa 25.000 ký tự và thử lại.',400);
  $fingerprint=hash('sha256',json_encode([$id,$input['revision']??0,$body,$user['username']],JSON_UNESCAPED_UNICODE));
