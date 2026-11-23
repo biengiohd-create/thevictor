@@ -62,7 +62,7 @@ function returns_write(PDO $db,array $input,array $user): array {
   $version=$current['version'];if($patches){$saved=wb_store($db,$snapshot,$current['sources'],$version,$user['username'],null,[['command'=>'returns_chat.apply','at'=>(int)(microtime(true)*1000)]],true);$version=$saved['version'];}
   $db->prepare('UPDATE return_messages SET body=?,entries=?,revision=?,updated_at=? WHERE id=?')->execute([$body,json_encode($entries,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR),($old?(int)$old['revision']:0)+1,$now,$id]);
   $db->prepare('INSERT INTO return_edits(message_id,actor,before_body,after_body,created_at) VALUES(?,?,?,?,?)')->execute([$id,$user['username'],$old['body']??'',$body,$now]);
-  if(function_exists('people_audit'))people_audit('returns_chat',$id,['before'=>$old['body']??'','after'=>$body,'entries'=>$entries],$db);
+  if(function_exists('people_audit'))people_audit('returns_chat',(string)$id,['before'=>$old['body']??'','after'=>$body,'entries'=>$entries],$db);
   $q=$db->prepare('SELECT * FROM return_messages WHERE id=?');$q->execute([$id]);$result=['ok'=>true,'message'=>returns_message($q->fetch()),'baseVersion'=>$current['version'],'version'=>$version,'patches'=>array_values($patches)];
   $db->prepare('INSERT INTO return_requests VALUES(?,?,?)')->execute([$key,$fingerprint,json_encode($result,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)]);$db->exec('COMMIT');return $result;
  }catch(Throwable $e){$db->exec('ROLLBACK');throw $e;}

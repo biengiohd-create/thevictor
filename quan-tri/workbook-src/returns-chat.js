@@ -2,7 +2,7 @@ import './returns-chat.css';
 
 const node=(tag,text,cls)=>{const n=document.createElement(tag);if(text)n.textContent=text;if(cls)n.className=cls;return n;};
 export function setupReturnsChat({editable,prepare,apply,release}){
- const toggle=node('button','◌ Hoàn đơn','returns-toggle');toggle.type='button';toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-controls','returns-chat');
+ const toggle=node('button','↩ Hoàn đơn','returns-toggle');toggle.type='button';toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-controls','returns-chat');
  const panel=node('section',null,'returns-panel');panel.id='returns-chat';panel.hidden=true;panel.setAttribute('aria-label','Chat hoàn đơn');
  const head=node('header'),title=node('strong','Hoàn đơn'),close=node('button','×');close.type='button';close.setAttribute('aria-label','Đóng chat hoàn đơn');head.append(title,close);
  const intro=node('p','Dán thông báo hoàn. Hệ thống tìm mã vận đơn trên mọi sheet và ghi lý do vào Tình trạng.','returns-intro');

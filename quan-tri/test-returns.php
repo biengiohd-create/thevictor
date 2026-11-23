@@ -1,5 +1,7 @@
 <?php
 if(PHP_SAPI!=='cli')exit;
+$root=sys_get_temp_dir().'/victor-returns-'.bin2hex(random_bytes(6));mkdir($root,0700);define('VICTOR_ADMIN_TEST_DIR',$root);require __DIR__.'/lib.php';session_save_path($root);session_start();file_put_contents($root.'/admin-config.json',json_encode(['username'=>'fixture','version'=>'fixture','password_hash'=>'unused']));$_SESSION=['admin'=>true,'auth_version'=>'fixture'];
+register_shutdown_function(static function()use($root){session_write_close();foreach(glob($root.'/*') as $file)if(is_file($file))unlink($file);rmdir($root);});
 require __DIR__.'/returns-lib.php';
 function rt_assert(bool $ok,string $name): void {if(!$ok)throw new RuntimeException($name);echo "PASS $name\n";}
 $catalog=array_fill_keys(['E1','E2','E4','KBH77','SM72','DTQ26','SG01','KGH90','B52'],[]);
@@ -31,4 +33,4 @@ $cur=wb_current($db);$cur['snapshot']['sheets']['a']['cellData'][1][2]['v']='Nh�
 $r3=returns_write($db,['id'=>$r2['message']['id'],'revision'=>2,'body'=>'E1 S DÀI 999999999999','requestKey'=>'33333333-3333-4333-a333-333333333333'],$u);$cur=wb_current($db);rt_assert($r3['message']['entries'][0]['state']==='missing','missing tracking red');rt_assert($cur['snapshot']['sheets']['a']['cellData'][1][2]['v']==='Nhân viên sửa','editing chat never reverts a subsequent manual cell edit');rt_assert($cur['snapshot']['sheets']['b']['cellData'][1][2]['v']==='Cũ','correcting tracking restores prior owned cell');
 try{returns_write($db,$edit+[],$u);rt_assert(true,'idempotent old edit remains stable');}catch(Throwable $e){throw $e;}
 $stale=$edit;$stale['requestKey']='44444444-4444-4444-a444-444444444444';try{returns_write($db,$stale,$u);throw new RuntimeException('stale revision accepted');}catch(RuntimeException $e){rt_assert($e->getCode()===409,'reject stale message edit');}
-rt_assert(count(returns_list($db))===1,'shared history persists');echo "RETURNS TESTS PASSED\n";
+rt_assert(count(returns_list($db))===1,'shared history persists');rt_assert((int)$db->query("SELECT COUNT(*) FROM people_audit WHERE event='returns_chat'")->fetchColumn()===3,'each create and edit is audited');echo "RETURNS TESTS PASSED\n";
