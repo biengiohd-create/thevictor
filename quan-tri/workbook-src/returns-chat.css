@@ -2,3 +2,5 @@
 @media(max-width:700px){.returns-toggle{right:12px;bottom:100px;padding:11px 16px}.returns-panel{right:12px;top:58px;bottom:85px;border-radius:12px}.returns-meta{flex-wrap:wrap}.returns-compose textarea{font-size:16px}.returns-intro{margin:8px 14px}}
 
 .cancel-toggle{bottom:134px}.returns-panel p{white-space:pre-wrap}
+
+.returns-toggle.cancel-toggle{background:#c82b39}.returns-toggle.cancel-toggle:hover{background:#a31d2c}.returns-panel[aria-label="Chat Đơn hủy"] header{background:#fff1f2;color:#a31d2c}.returns-panel[aria-label="Chat Đơn hủy"] .returns-compose button[type=submit]{background:#c82b39;border-color:#c82b39;color:#fff}.returns-compose>.chat-paste{margin-right:8px}
