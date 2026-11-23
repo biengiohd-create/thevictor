@@ -52,5 +52,29 @@ if('BroadcastChannel' in window){const inboxChannel=new BroadcastChannel('victor
 
 const dailyButton=document.createElement('button');dailyButton.textContent='Tạo sheet theo ngày';dailyButton.onclick=()=>{if(!editable())return;const dialog=document.createElement('dialog');dialog.innerHTML='<form method="dialog"><h2>Tạo sheet NAM / NỮ</h2><label>Ngày đơn <input type="date" name="day" required></label><p>Hai sheet cùng ngày; không tạo trùng tên đã có.</p><button value="cancel" formnovalidate>Hủy</button><button value="create" class="primary">Tạo sheet</button></form>';document.body.append(dialog);dialog.querySelector('input').value=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Ho_Chi_Minh'});dialog.addEventListener('close',()=>{if(dialog.returnValue==='create'){const parts=dialog.querySelector('input').value.split('-');const date=Number(parts[2])+'/'+Number(parts[1]);const snapshot=editor.workbook.save();const base=snapshot.sheets[snapshot.sheetOrder[0]];for(const group of ['NAM','NỮ']){const name=date+' '+group;if(Object.values(editor.workbook.save().sheets).some(s=>s.name===name))continue;userTouched=true;editor.workbook.insertSheet(name,{sheet:dailyTemplate(base)});}epoch++;schedule();}dialog.remove();});dialog.showModal();};document.querySelector('.workbook-actions').append(dailyButton);
 
-setupReturnsChat({editable:()=>can('edit'),prepare:async()=>{if(saving||loading)throw Error('Bảng đang đồng bộ. Đợi hoàn tất rồi gửi lại.');await save();if(dirty()||paused||cellEditing)throw Error('Cần lưu thành công phần bảng đang sửa trước khi gửi thông báo hoàn.');returnsBusy=true;document.body.classList.add('returns-busy');$('editor').inert=true;},release:()=>{returnsBusy=false;document.body.classList.remove('returns-busy');$('editor').inert=false;},apply:async result=>{if(result.version===revision)return;if(dirty())throw Error('Tin đã lưu. Bảng có thay đổi chưa lưu; giữ nguyên dữ liệu và làm mới sau khi lưu xong.');if(result.baseVersion!==revision){await load(true);return;}applyingReturns=true;try{for(const p of result.patches??[])editor.api.syncExecuteCommand(SetRangeValuesMutation.id,{unitId:editor.workbook.getId(),subUnitId:p.sheet,cellValue:{[p.row]:{[p.col]:p.cell??{v:null}}}});revision=result.version;status('Đã cập nhật lý do hoàn · Phiên bản '+revision);}finally{applyingReturns=false;}if('BroadcastChannel' in window){const c=new BroadcastChannel('victor-workbook');c.postMessage({type:'returns',origin:returnsOrigin});c.close();}}});
+setupReturnsChat({
+ editable:()=>can('edit'),
+ prepare:async()=>{
+  if(saving||loading)throw Error('Bảng đang đồng bộ. Đợi hoàn tất rồi gửi lại.');
+  await save();
+  if(dirty()||paused||cellEditing)throw Error('Cần lưu thành công phần bảng đang sửa trước khi gửi thông báo hoàn.');
+  returnsBusy=true;document.body.classList.add('returns-busy');
+  document.querySelectorAll('#editor,.sheet-menus,.workbook-actions').forEach(e=>e.inert=true);
+ },
+ release:()=>{
+  returnsBusy=false;document.body.classList.remove('returns-busy');
+  document.querySelectorAll('#editor,.sheet-menus,.workbook-actions').forEach(e=>e.inert=false);
+ },
+ apply:async result=>{
+  if(result.version===revision)return;
+  if(dirty())throw Error('Tin đã lưu. Bảng có thay đổi chưa lưu; giữ nguyên dữ liệu và làm mới sau khi lưu xong.');
+  if(result.baseVersion!==revision){status('Thông báo hoàn đã lưu. Bảng vừa được người khác thay đổi; bấm Làm mới để đồng bộ.',true);return;}
+  applyingReturns=true;
+  try{
+   for(const p of result.patches??[])editor.api.syncExecuteCommand(SetRangeValuesMutation.id,{unitId:editor.workbook.getId(),subUnitId:p.sheet,cellValue:{[p.row]:{[p.col]:p.cell??{v:null}}}});
+   revision=result.version;status('Đã cập nhật lý do hoàn · Phiên bản '+revision);
+  }finally{applyingReturns=false;}
+  if('BroadcastChannel' in window){const c=new BroadcastChannel('victor-workbook');c.postMessage({type:'returns',origin:returnsOrigin});c.close();}
+ }
+});
 document.addEventListener('keydown',e=>{if(returnsBusy&&!e.target.closest?.('.returns-panel')){e.preventDefault();e.stopImmediatePropagation();}},true);
