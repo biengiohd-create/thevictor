@@ -1,3 +1,4 @@
+import {isTotalRow} from './total-row-core.js';
 // Insert through Univer so existing formulas, formats and references move with their columns.
 import {SetRangeValuesMutation} from '@univerjs/sheets';
 export function ensureSerialColumn(workbook,editable,api,initialize=true){
@@ -10,7 +11,7 @@ export function ensureSerialColumn(workbook,editable,api,initialize=true){
  }
  const cells=workbook.save().sheets[sid].cellData??{};
  for(const [row,data]of Object.entries(cells)){
-  if(+row<1||!data||data[0]?.custom?.victorTotal)continue;
+  if(+row<1||!data||isTotalRow({cellData:cells},+row))continue;
   const occupied=Object.entries(data).some(([col,cell])=>+col>offset&&cell&&(cell.f||cell.p||(cell.v!==undefined&&cell.v!==null&&cell.v!=='')));
   const serial=data[offset];if(occupied&&!serial?.f&&(serial?.v===undefined||serial.v===null||serial.v==='')){
    let n=sheet.getMaxColumns(),last='';while(n){n--;last=String.fromCharCode(65+n%26)+last;n=Math.floor(n/26);}
