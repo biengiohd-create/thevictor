@@ -9,7 +9,7 @@ function receipt_zip_part(ZipArchive $zip,string $path,int $max=20000000): strin
  $stat=$zip->statName($path);if(!$stat||$stat['size']>$max)throw new RuntimeException('Thành phần Excel thiếu hoặc quá lớn.',400);$text=$zip->getFromName($path);if($text===false)throw new RuntimeException('Không đọc được file Excel.',400);return $text;
 }
 function receipt_file_tables(string $path,string $extension): array {
- if($extension==='csv'){$f=fopen($path,'rb');$first=fgets($f);rewind($f);$separator=substr_count((string)$first,';')>substr_count((string)$first,',')?';':',';$rows=[];while(($row=fgetcsv($f,200000,$separator))!==false){if(count($rows)>50000)throw new RuntimeException('File tối đa 50.000 dòng.',413);$rows[]=$row;}fclose($f);return ['CSV'=>$rows];}
+ if($extension==='csv'){$f=fopen($path,'rb');$first=fgets($f);rewind($f);$separator=substr_count((string)$first,';')>substr_count((string)$first,',')?';':',';$rows=[];$cells=0;while(($row=fgetcsv($f,200000,$separator))!==false){$cells+=count($row);if(count($rows)>=50000||count($row)>512||$cells>500000){fclose($f);throw new RuntimeException('File tối đa 50.000 dòng, 512 cột và 500.000 ô.',413);}$rows[]=$row;}fclose($f);return ['CSV'=>$rows];}
  if($extension!=='xlsx')throw new RuntimeException('Chọn file Excel .xlsx hoặc CSV. Với .xls cũ, lưu thành .xlsx trước khi tải.',400);
  if(!class_exists('ZipArchive'))throw new RuntimeException('Máy chủ chưa có bộ đọc Excel.',500);$zip=new ZipArchive();if($zip->open($path)!==true)throw new RuntimeException('File Excel không hợp lệ hoặc được đặt mật khẩu.',400);
  try{
