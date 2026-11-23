@@ -1,0 +1,2 @@
+import {IAutoFillService,AUTO_FILL_APPLY_TYPE,AUTO_FILL_HOOK_TYPE} from '@univerjs/sheets';
+export function setupSerialFill(editor){const fill=editor.univer.__getInjector().get(IAutoFillService);return fill.addHook({id:'victor-serial-values-only',type:AUTO_FILL_HOOK_TYPE.APPEND,onBeforeFillData(location){const sheet=editor.workbook.getSheetBySheetId(location.subUnitId);if(location.source.cols.length===1&&String(sheet.getRange(0,location.source.cols[0]).getValue()).trim().toUpperCase()==='STT')return AUTO_FILL_APPLY_TYPE.NO_FORMAT;}});}

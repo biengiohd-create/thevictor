@@ -1,3 +1,5 @@
+import {setupSerialFill} from './serial-fill.js';
+import './chat-clipboard.js';
 import {setupCellHistory} from './cell-history.js';
 import {setupCancelChat} from './cancel-chat.js';
 import {ensureTotalRows,protectTotals,totalsInternal} from './total-rows.js';
@@ -28,7 +30,7 @@ async function mount(snapshot){loading=true;clipboardControls?.dispose();arrowCo
  $('editor').onpointerdown=()=>{userTouched=true;};$('editor').onkeydown=()=>{userTouched=true;};
  if(!editable())await editor.workbook.getWorkbookPermission().setMode('viewer');
  const ageChanged=editable()?removeAgeColumns(editor):false;const timeChanged=editable()?ensureTimeColumns(editor):false;const serialChanged=ensureSerialColumn(editor.workbook,editable(),editor.api);clearInitializationHistory(editor);arrowControls=setupArrowEdges({editor,editing:()=>cellEditing});
- ensureTotalRows(editor);protectTotals(editor,()=>!!user?.owner,status);setupCellHistory(editor,can,status);protectTime(editor,status);clipboardControls=setupClipboardKeys({editor,editable,editing:()=>cellEditing,status});undoControls=setupUndoKeys({editor,editable,editing:()=>cellEditing,history:()=>{if(can('history'))$('history').click();},status});setupCopyWidths(editor);clearControls=setupClearKeys({editor,editable,editing:()=>cellEditing,touch:()=>{userTouched=true;},status});mobileControls=setupMobileSheet({editor,editable,status,touch:()=>{userTouched=true;}});
+ setupSerialFill(editor);ensureTotalRows(editor);protectTotals(editor,()=>!!user?.owner,status);setupCellHistory(editor,can,status);protectTime(editor,status);clipboardControls=setupClipboardKeys({editor,editable,editing:()=>cellEditing,status});undoControls=setupUndoKeys({editor,editable,editing:()=>cellEditing,history:()=>{if(can('history'))$('history').click();},status});setupCopyWidths(editor);clearControls=setupClearKeys({editor,editable,editing:()=>cellEditing,touch:()=>{userTouched=true;},status});mobileControls=setupMobileSheet({editor,editable,status,touch:()=>{userTouched=true;}});
  const phoneColumn=(sheet,col)=>['sđt','sdt','số điện thoại'].includes(String(sheet.getRange(0,col).getValue()??'').trim().toLocaleLowerCase('vi'));
  const preparePhone=(sheet,row,col,matrix)=>{if(row<1||!phoneColumn(sheet,col))return;const cell=sheet.getRange(row,col).getCellData();if(!cell?.s)sheet.getRange(row,col).setNumberFormat('@');};
  editor.api.addEvent(editor.api.Event.BeforeSheetEditStart,params=>{if(!params.cancel)preparePhone(params.worksheet,params.row,params.column);});
