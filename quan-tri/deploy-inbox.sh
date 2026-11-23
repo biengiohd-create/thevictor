@@ -22,6 +22,8 @@ php -d display_errors=1 "$source_dir/quan-tri/test-hr-access.php"
 php -d display_errors=1 "$source_dir/quan-tri/test-board-report.php"
 php -d display_errors=1 "$source_dir/quan-tri/test-returns.php"
 php -d display_errors=1 "$source_dir/quan-tri/test-receipts.php"
+php -d display_errors=1 "$source_dir/quan-tri/test-mkt.php"
+node --test "$source_dir/quan-tri/mkt-screen.test.mjs"
 cp "$root/public_html/api/orders.php" "$release/orders.php"
 php "$source_dir/quan-tri/patch-orders-default.php" "$release/orders.php"
 php -l "$release/orders.php"
@@ -36,12 +38,19 @@ cp -a "$root/public_html/quan-tri" "$backup/quan-tri"
 cp -a "$root/public_html/api/orders.php" "$backup/orders.php"
 VICTOR_DEPLOY_BACKUP="$backup" php -r '$s=new SQLite3("/home/twjmlulv/thevictor-private/orders.sqlite");if(!$s->backup(new SQLite3(getenv("VICTOR_DEPLOY_BACKUP")."/orders.sqlite")))exit(1);'
 VICTOR_DEPLOY_BACKUP="$backup" php -r '$s=new SQLite3("/home/twjmlulv/thevictor-private/admin-auth.sqlite");if(!$s->backup(new SQLite3(getenv("VICTOR_DEPLOY_BACKUP")."/admin-auth.sqlite")))exit(1);'
+# Migrate transfer metadata before publishing callers of the new wb_store signature.
+VICTOR_MIGRATE_SOURCE="$source_dir" php -r 'require getenv("VICTOR_MIGRATE_SOURCE")."/quan-tri/inbox-flow.php";$db=new PDO("sqlite:/home/twjmlulv/thevictor-private/orders.sqlite");$db->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);inbox_board_schema($db);'
+bash "$source_dir/quan-tri/build-mkt-ocr.sh" "$release/mkt-ocr-assets"
+mkdir -p "$root/public_html/quan-tri/mkt-ocr-assets"
+cp -a "$release/mkt-ocr-assets/." "$root/public_html/quan-tri/mkt-ocr-assets/"
+find "$root/public_html/quan-tri/mkt-ocr-assets" -type d -exec chmod 0755 {} +
+find "$root/public_html/quan-tri/mkt-ocr-assets" -type f -exec chmod 0644 {} +
 assets="$root/public_html/quan-tri/workbook-assets-v2"
 mkdir -p "$assets"
 cp -a dist/assets/. "$assets/"
 find "$assets" -type d -exec chmod 0755 {} +
 find "$assets" -type f -exec chmod 0644 {} +
-for file in inbox-daily.php receipt-files.php receipt-lib.php receipt-api.php receipts.php receipt.js receipt.css inbox-layout.js returns-lib.php returns-api.php board-products.php quality-lib.php quality.php quality.js quality.css quality-notice.js date-picker.js workbook-time.php board-report.php report-dates.php board-report-view.php stock-view.php board-report.js board-report.css date-presets.js web-period.js hr-nav-links.php hr-access.php leave-lib.php payroll-runs.php notifications-state.js password-lib.php password.php notifications-lib.php notifications.php notifications.js notifications.css payroll-lib.php activity.js people-lib.php people-api.php people.php people.js people.css identity-view.php team.php lib.php workbook-lib.php inbox-flow.php api.php sheet-api.php workbook-api.php workbook-export.php team-ui.js admin.css admin.js spreadsheet-view.php index.php; do
+for file in mkt-lib.php mkt-api.php mkt-profit.php mkt-profit-view.php mkt-view.php mkt.js mkt-screen.js mkt.css inbox-daily.php receipt-files.php receipt-lib.php receipt-api.php receipts.php receipt.js receipt.css inbox-layout.js returns-lib.php returns-api.php board-products.php quality-lib.php quality.php quality.js quality.css quality-notice.js date-picker.js workbook-time.php board-report.php report-dates.php board-report-view.php stock-view.php board-report.js board-report.css date-presets.js web-period.js hr-nav-links.php hr-access.php leave-lib.php payroll-runs.php notifications-state.js password-lib.php password.php notifications-lib.php notifications.php notifications.js notifications.css payroll-lib.php activity.js people-lib.php people-api.php people.php people.js people.css identity-view.php team.php lib.php workbook-lib.php inbox-flow.php api.php sheet-api.php workbook-api.php workbook-export.php team-ui.js admin.css admin.js spreadsheet-view.php index.php; do
  install -m 0644 "$source_dir/quan-tri/$file" "$root/public_html/quan-tri/$file.new"
  mv "$root/public_html/quan-tri/$file.new" "$root/public_html/quan-tri/$file"
 done
