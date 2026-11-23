@@ -7,7 +7,7 @@ function size_measurements(string $text):?array {
  elseif(preg_match('/\b([12]\.\d{1,2})\s*m?/u',$t,$m))$h=(float)$m[1]*100;
  elseif(preg_match('/(?:cao\s*|\b)(1\d{2}|2[01]\d)\s*(?:cm)?/u',$t,$m))$h=(float)$m[1];
  if(preg_match('/(?:nặng|nang)\s*(\d{2,3}(?:\.\d+)?)/u',$t,$m)||preg_match('/(\d{2,3}(?:\.\d+)?)\s*(?:kg|kí|ki|ký|k)(?![\p{L}])/u',$t,$m))$w=(float)$m[1];
- elseif(preg_match('/^\s*(?:1\d{2}|2[01]\d|[12]\.\d{1,2})\s*[/; -]\s*(\d{2,3}(?:\.\d+)?)\s*$/u',$t,$m))$w=(float)$m[1];
+ elseif(preg_match('/^\s*(?:1\d{2}|2[01]\d|[12]\.\d{1,2})\s*[\/; -]\s*(\d{2,3}(?:\.\d+)?)\s*$/u',$t,$m))$w=(float)$m[1];
  return $h!==null&&$w!==null&&$h>=120&&$h<=220&&$w>=25&&$w<=250?['height'=>round($h),'weight'=>$w]:null;
 }
 function size_wilson(int $bad,int $n):array {if(!$n)return [0,1];$z=1.96;$p=$bad/$n;$d=1+$z*$z/$n;$c=($p+$z*$z/(2*$n))/$d;$e=$z*sqrt($p*(1-$p)/$n+$z*$z/(4*$n*$n))/$d;return [$c-$e,$c+$e];}
