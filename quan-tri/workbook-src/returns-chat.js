@@ -4,9 +4,9 @@ import {setupReturnsPanel} from './returns-panel-state.js';
 
 const node=(tag,text,cls)=>{const n=document.createElement(tag);if(text)n.textContent=text;if(cls)n.className=cls;return n;};
 export function setupReturnsChat({editable,prepare,apply,release,identity}){
- const toggle=node('button','↩ Hoàn đơn','returns-toggle');toggle.type='button';toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-controls','returns-chat');
+ const toggle=node('button','↩ Báo Hàng Hoàn','returns-toggle');toggle.type='button';toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-controls','returns-chat');
  const panel=node('section',null,'returns-panel');panel.id='returns-chat';panel.hidden=true;panel.setAttribute('aria-label','Chat hoàn đơn');
- const head=node('header'),title=node('strong','Hoàn đơn'),close=node('button','×');close.type='button';close.setAttribute('aria-label','Đóng chat hoàn đơn');head.append(title,close);
+ const head=node('header'),title=node('strong','Báo Hàng Hoàn'),close=node('button','×');close.type='button';close.setAttribute('aria-label','Đóng chat hoàn đơn');head.append(title,close);
  const intro=node('p','Dán thông báo hoàn. Hệ thống tìm mã vận đơn trên mọi sheet và ghi lý do vào Tình trạng.','returns-intro');
  const history=node('div',null,'returns-history'),older=node('button','Xem tin cũ hơn','returns-older');older.type='button';
  const form=node('form',null,'returns-compose'),input=node('textarea');input.rows=3;input.placeholder='Mã vận đơn, sản phẩm / size, lý do hoàn…';input.setAttribute('aria-label','Nội dung thông báo hoàn');input.maxLength=25000;

@@ -15,7 +15,7 @@ function people_validate_profile(array $data,bool $required=true): array {
 }
 function people_onboarding_guard(): void {
  $u=team_identity();if(!$u||$u['owner']||$u['profileComplete'])return;$script=basename($_SERVER['SCRIPT_NAME']??'');if(in_array($script,['people.php','people-api.php','notifications.php','password.php'],true)||($script==='index.php'&&($_SERVER['REQUEST_METHOD']??'')==='POST'&&($_POST['action']??'')==='logout'))return;
- if(str_ends_with($script,'api.php')){http_response_code(403);header('Content-Type: application/json; charset=utf-8');echo json_encode(['error'=>'Cần hoàn thiện hồ sơ cá nhân trước khi làm việc.','profileRequired'=>true]);exit;}header('Location: /quan-tri/people.php?onboarding=1');exit;
+ if(str_ends_with($script,'api.php')){http_response_code(403);header('Content-Type: application/json; charset=utf-8');echo json_encode(['error'=>'Cần hoàn thiện hồ sơ cá nhân trước khi làm việc.','profileRequired'=>true]);exit;}header('Location: /lamviec/people.php?onboarding=1');exit;
 }
 function people_audit(string $event,string $target,array $details=[],?PDO $db=null,?array $actor=null): void {
  $db??=team_db();people_schema($db);$actor??=team_identity()??['id'=>0,'username'=>'system','name'=>'Hệ thống'];

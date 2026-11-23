@@ -1,11 +1,11 @@
 <?php
-ini_set('memory_limit','768M');require __DIR__.'/lib.php';require __DIR__.'/receipt-lib.php';admin_init();
+ini_set('memory_limit','768M');require __DIR__.'/lib.php';require __DIR__.'/receipt-lib.php';require_once __DIR__.'/return-reasons.php';admin_init();
 function receipt_reply(array $data,int $code=200): never {http_response_code($code);header('Content-Type: application/json; charset=utf-8');echo json_encode($data,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);exit;}
 try{
  if(!admin_logged_in())throw new RuntimeException('Vui lòng đăng nhập.',401);team_require('view');$user=team_identity();$db=admin_db();wb_schema($db);receipt_schema($db);
  if($_SERVER['REQUEST_METHOD']==='GET'){
   session_write_close();$action=$_GET['action']??'';
-  if($action==='report')receipt_reply(board_report($db,$_GET));
+  if($action==='report')receipt_reply(receipt_reason_report($db,$_GET));
   if($action==='download'){$q=$db->prepare('SELECT file_path,file_name FROM return_batches WHERE id=?');$q->execute([(int)($_GET['id']??0)]);$file=$q->fetch();$base=realpath(admin_private().'/return-files');$path=$file?realpath($file['file_path']):false;if(!$path||!$base||!str_starts_with($path,$base.DIRECTORY_SEPARATOR)||!is_file($path))throw new RuntimeException('Không tìm thấy file gốc.',404);header('Content-Type: application/octet-stream');header("Content-Disposition: attachment; filename=return-file.xlsx; filename*=UTF-8''".rawurlencode($file['file_name']));header('Content-Length: '.filesize($path));readfile($path);exit;}
   if(isset($_GET['id']))receipt_reply(['batch'=>receipt_batch($db,(int)$_GET['id']),'canEdit'=>team_can('edit')]);$date=(string)($_GET['date']??'');if($date!==''&&!preg_match('/^\d{4}-\d{2}-\d{2}$/D',$date))throw new RuntimeException('Ngày không hợp lệ.',400);receipt_reply(['batches'=>receipt_batches($db,$date),'canEdit'=>team_can('edit'),'owner'=>$user['owner']]);
  }
