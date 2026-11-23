@@ -16,6 +16,9 @@ $examples=[
  'K ỨNG CHẤT 842625039571 KBH77 M'=>'K ỨNG CHẤT',
  'Lý do: CHẬT BỤNG | Mã vận đơn: 842624613918 | DTQ26 2XL'=>'CHẬT BỤNG',
  'SG01 M 30K RỘNG BỤNG 842624993843'=>'30K RỘNG BỤNG',
+ '842624993843 SG01 M sản phẩm lỗi, không đúng size'=>'sản phẩm lỗi, không đúng size',
+ "DTQ26 2XL\n842624613918\nCHẬT BỤNG 10CM"=>'CHẬT BỤNG 10CM',
+ 'KBH77 CHẬT 842625039571 M'=>'CHẬT',
 ];
 foreach($examples as $text=>$reason){$p=returns_parse($text,$catalog);rt_assert(count($p)===1&&$p[0]['reason']===$reason&&$p[0]['state']==='ready','parse flexible syntax: '.$text);}
 rt_assert(returns_parse('E1 S lý do 842625039571 842624613918',$catalog)[0]['state']==='incomplete','multiple tracking numbers never broadcast a reason');

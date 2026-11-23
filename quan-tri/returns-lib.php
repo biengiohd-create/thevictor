@@ -24,15 +24,16 @@ function returns_parse(string $body,array $catalog): array {
   preg_match_all('/(?<!\d)\d{8,20}(?!\d)/u',$line,$codes,PREG_OFFSET_CAPTURE);
   if(!$codes[0]){if(preg_match($product,$line)||preg_match('/\b(?:MÃ|MA|VẬN|VAN)\b/iu',$line))$entries[]=['raw'=>$line,'tracking'=>'','products'=>[],'reason'=>'','state'=>'incomplete','matches'=>[]];continue;}
   $products=[];$reason=preg_replace_callback($product,static function($m)use(&$products){$products[]=['sku'=>mb_strtoupper($m[1],'UTF-8'),'size'=>mb_strtoupper($m[2],'UTF-8')];return ' ';},$line);
+  if(!$products&&$skus){preg_match_all('~(?<![\p{L}\d])('.$skuPattern.')(?![\p{L}\d])~iu',$reason,$skuOnly);preg_match_all('~(?<![\p{L}\d])(\d{1,2}XL|XXXL|XXL|XXS|XS|XL|S|M|L)(?![\p{L}\d])~iu',$reason,$sizeOnly);if(count($skuOnly[0])===1&&count($sizeOnly[0])===1){$products[]=['sku'=>mb_strtoupper($skuOnly[1][0],'UTF-8'),'size'=>mb_strtoupper($sizeOnly[1][0],'UTF-8')];$reason=preg_replace('~(?<![\p{L}\d])(?:'.preg_quote($skuOnly[0][0],'~').'|'.preg_quote($sizeOnly[0][0],'~').')(?![\p{L}\d])~iu',' ',$reason);}}
   $reason=preg_replace('/(?<!\d)\d{8,20}(?!\d)/u',' ',$reason);
-  $reason=preg_replace('/(?:mã\s*vận\s*đơn|ma\s*van\s*don|tracking|vận\s*đơn|sản\s*phẩm|san\s*pham|lý\s*do(?:\s*hoàn)?|ly\s*do(?:\s*hoan)?|size)\s*[:=]?/iu',' ',$reason);
+  $reason=preg_replace('/(?:mã\s*vận\s*đơn|ma\s*van\s*don|tracking|vận\s*đơn|sản\s*phẩm|san\s*pham|lý\s*do(?:\s*hoàn)?|ly\s*do(?:\s*hoan)?|size)\s*[:=]/iu',' ',$reason);
   $reason=trim(preg_replace('/\s+/u',' ',$reason)," \t|:;,+=-");
   // More than one tracking number on a line is ambiguous: do not broadcast one
   // reason to several customers. The employee can split the lines and resubmit.
   foreach($codes[0] as $code)$entries[]=['raw'=>$line,'tracking'=>$code[0],'products'=>$products,'reason'=>$reason,'state'=>count($codes[0])===1&&$reason!==''?'ready':'incomplete','matches'=>[]];
  }
  if(count($entries)>100)throw new RuntimeException('Mỗi tin tối đa 100 đơn. Chia thành nhiều tin để xử lý.',400);
- return $entries;
+ $counts=array_count_values(array_column($entries,'tracking'));foreach($entries as &$entry)if($entry['tracking']!==''&&($counts[$entry['tracking']]??0)>1)$entry['state']='incomplete';unset($entry);return $entries;
 }
 function returns_columns(array $sheet): array {
  $map=[];foreach(($sheet['cellData'][0]??[]) as $c=>$cell)$map[report_fold(returns_text($cell))]=(int)$c;
@@ -42,7 +43,7 @@ function returns_columns(array $sheet): array {
 }
 function returns_message(array $m): array {$m['id']=(int)$m['id'];$m['revision']=(int)$m['revision'];$m['entries']=json_decode($m['entries'],true,512,JSON_THROW_ON_ERROR);return $m;}
 function returns_list(PDO $db,int $before=0): array {
- $q=$db->prepare('SELECT * FROM return_messages WHERE (?=0 OR id<?) ORDER BY id DESC LIMIT 50');$q->execute([$before,$before]);return array_map('returns_message',$q->fetchAll());
+ $q=$db->prepare('SELECT * FROM return_messages'.($before?' WHERE id<?':'').' ORDER BY id DESC LIMIT 50');$q->execute($before?[$before]:[]);return array_map('returns_message',$q->fetchAll());
 }
 function returns_write(PDO $db,array $input,array $user): array {
  $body=trim((string)($input['body']??''));$key=(string)($input['requestKey']??'');$id=(int)($input['id']??0);
