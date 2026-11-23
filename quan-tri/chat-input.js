@@ -7,6 +7,11 @@
     }, true);
   }
   window.addEventListener('keydown', event => {
+    if (['Backspace', 'Delete'].includes(event.key) && !panelFor(event)) {
+      const detail = {event, handled: false};
+      window.dispatchEvent(new CustomEvent('victor-clear-selection', {detail}));
+      if (detail.handled) { event.preventDefault(); event.stopImmediatePropagation(); return; }
+    }
     const panel = panelFor(event);
     if (!panel) return;
     // Leave native copy/paste and text selection intact; isolate all spreadsheet shortcuts.
