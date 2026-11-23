@@ -53,6 +53,7 @@ if('BroadcastChannel' in window){const inboxChannel=new BroadcastChannel('victor
 const dailyButton=document.createElement('button');dailyButton.textContent='Tạo sheet theo ngày';dailyButton.onclick=()=>{if(!editable())return;const dialog=document.createElement('dialog');dialog.innerHTML='<form method="dialog"><h2>Tạo sheet NAM / NỮ</h2><label>Ngày đơn <input type="date" name="day" required></label><p>Hai sheet cùng ngày; không tạo trùng tên đã có.</p><button value="cancel" formnovalidate>Hủy</button><button value="create" class="primary">Tạo sheet</button></form>';document.body.append(dialog);dialog.querySelector('input').value=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Ho_Chi_Minh'});dialog.addEventListener('close',()=>{if(dialog.returnValue==='create'){const parts=dialog.querySelector('input').value.split('-');const date=Number(parts[2])+'/'+Number(parts[1]);const snapshot=editor.workbook.save();const base=snapshot.sheets[snapshot.sheetOrder[0]];for(const group of ['NAM','NỮ']){const name=date+' '+group;if(Object.values(editor.workbook.save().sheets).some(s=>s.name===name))continue;userTouched=true;editor.workbook.insertSheet(name,{sheet:dailyTemplate(base)});}epoch++;schedule();}dialog.remove();});dialog.showModal();};document.querySelector('.workbook-actions').append(dailyButton);
 
 setupReturnsChat({
+ identity:()=>user?.username,
  editable:()=>can('edit'),
  prepare:async()=>{
   if(saving||loading)throw Error('Bảng đang đồng bộ. Đợi hoàn tất rồi gửi lại.');

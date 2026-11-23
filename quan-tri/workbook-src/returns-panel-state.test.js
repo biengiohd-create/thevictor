@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {clampPanel} from './returns-panel-state.js';
+test('chat can be placed freely while staying inside the visible screen',()=>{assert.deepEqual(clampPanel({x:180,y:90},{width:1280,height:720},{width:420,height:500}),{x:180,y:90,width:420,height:500});assert.equal(clampPanel({x:1500,y:900},{width:1280,height:720},{width:420,height:500}).x,848);assert.equal(clampPanel({x:-10,y:-20},{width:1280,height:720},{width:420,height:500}).y,12);});
+test('a stored desktop position is clamped to a smaller mobile screen',()=>{const p=clampPanel({x:900,y:300},{width:390,height:600},{width:420,height:550});assert.equal(p.width,366);assert.equal(p.x,12);assert.ok(p.y+p.height<=588);});
