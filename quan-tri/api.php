@@ -1,5 +1,5 @@
 <?php
-ini_set('memory_limit','768M');
+ini_set('memory_limit','768M');if(!ini_get('zlib.output_compression'))ob_start('ob_gzhandler');
 require __DIR__.'/lib.php';require __DIR__.'/inbox-flow.php';require_once __DIR__.'/board-report.php';require_once __DIR__.'/stock-matrix.php';admin_init();
 function api_reply(array $data,int $status=200): never {http_response_code($status);header('Content-Type: application/json; charset=utf-8');echo json_encode($data,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);exit;}
 if(!admin_logged_in())api_reply(['error'=>'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'],401);

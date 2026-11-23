@@ -1,4 +1,4 @@
-import {chatPasteButton} from './chat-paste.js';
+
 import './returns-chat.css';
 import {setupReturnsPanel} from './returns-panel-state.js';
 
@@ -10,7 +10,7 @@ export function setupReturnsChat({editable,prepare,apply,release,identity}){
  const intro=node('p','Dán thông báo hoàn. Hệ thống tìm mã vận đơn trên mọi sheet và ghi lý do vào Tình trạng.','returns-intro');
  const history=node('div',null,'returns-history'),older=node('button','Xem tin cũ hơn','returns-older');older.type='button';
  const form=node('form',null,'returns-compose'),input=node('textarea');input.rows=3;input.placeholder='Mã vận đơn, sản phẩm / size, lý do hoàn…';input.setAttribute('aria-label','Nội dung thông báo hoàn');input.maxLength=25000;
- const note=node('p','','returns-notice');note.setAttribute('role','status');const actions=node('div'),cancel=node('button','Hủy sửa'),send=node('button','Gửi & cập nhật bảng');cancel.type='button';cancel.hidden=true;send.type='submit';actions.append(chatPasteButton(input,message=>{note.textContent=message;}),cancel,send);form.append(input,note,actions);panel.append(head,intro,older,history,form);document.body.append(toggle,panel);
+ const note=node('p','','returns-notice');note.setAttribute('role','status');const actions=node('div'),cancel=node('button','Hủy sửa'),send=node('button','Gửi & cập nhật bảng');cancel.type='button';cancel.hidden=true;send.type='submit';actions.append(cancel,send);form.append(input,note,actions);panel.append(head,intro,older,history,form);document.body.append(toggle,panel);
  let messages=new Map(),editing=null,busy=false,key=null,timer,cursor=0;
  const panelState=setupReturnsPanel({panel,head,toggle,identity,close:()=>open(false),getDraft:()=>({body:input.value,editing:editing?{id:editing.id,revision:editing.revision,actor_name:editing.actor_name,actor:editing.actor}:null,key}),setDraft:d=>{input.value=d.body;editing=d.editing&&Number.isInteger(Number(d.editing.id))?d.editing:null;key=typeof d.key==='string'?d.key:null;cancel.hidden=!editing;send.textContent=editing?'Lưu chỉnh sửa':'Gửi & cập nhật bảng';}});
  async function api(data,before=0){const response=await fetch('returns-api.php'+(!data?'?before='+before+'&cursor='+cursor:''),{cache:'no-store',...(data?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...data,csrf:document.querySelector('meta[name=csrf-token]')?.content})}:{})});const result=await response.json();if(!response.ok)throw Error(result.error||'Không tải được chat hoàn đơn.');return result;}

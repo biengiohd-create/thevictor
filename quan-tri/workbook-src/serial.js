@@ -5,11 +5,11 @@ export function ensureSerialColumn(workbook,editable,api,initialize=true){
  if(!editable)return false;const sheet=workbook.getActiveSheet();if(!sheet)return false;const sid=sheet.getSheetId();const offset=String(sheet.getRange(0,0).getValue()??'').trim().toLocaleUpperCase('vi')==='THỜI GIAN'?1:0;
  let changed=false;
  if(String(sheet.getRange(0,offset).getValue()??'').trim().toUpperCase()!=='STT'){
-  if(!initialize||Object.values(workbook.save().sheets[sid].cellData?.[0]??{}).some(c=>String(c?.v??'').trim().toUpperCase()==='STT'))return false;
+  if(!initialize||Object.values(sheet.getSheet().getCellMatrix().getMatrix()?.[0]??{}).some(c=>String(c?.v??'').trim().toUpperCase()==='STT'))return false;
   sheet.insertColumnsBefore(offset,1);sheet.setColumnWidth(offset,68);
   sheet.getRange(0,offset).setValue('STT').setVerticalAlignment('middle').setBackgroundColor('#00ff00').setFontWeight('bold');changed=true;
  }
- const cells=workbook.save().sheets[sid].cellData??{};
+ const cells=sheet.getSheet().getCellMatrix().getMatrix();
  for(const [row,data]of Object.entries(cells)){
   if(+row<1||!data||isTotalRow({cellData:cells},+row))continue;
   const occupied=Object.entries(data).some(([col,cell])=>+col>offset&&cell&&(cell.f||cell.p||(cell.v!==undefined&&cell.v!==null&&cell.v!=='')));
