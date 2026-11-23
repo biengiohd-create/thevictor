@@ -4,3 +4,4 @@
 .cancel-toggle{bottom:134px}.returns-panel p{white-space:pre-wrap}
 
 .returns-toggle.cancel-toggle{background:#c82b39}.returns-toggle.cancel-toggle:hover{background:#a31d2c}.returns-panel[aria-label="Chat Đơn hủy"] header{background:#fff1f2;color:#a31d2c}.returns-panel[aria-label="Chat Đơn hủy"] .returns-compose button[type=submit]{background:#c82b39;border-color:#c82b39;color:#fff}.returns-compose>.chat-paste{margin-right:8px}
+.returns-toggle.cancel-toggle{background:#c82b39!important;color:#fff!important}.cancel-panel{border-color:#e6a1a8}.cancel-panel header{background:#c82b39!important;color:#fff!important}.cancel-panel header button{color:#fff}.returns-panel input,.returns-panel textarea,.returns-history{user-select:text!important;-webkit-user-select:text!important}
