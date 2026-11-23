@@ -1,12 +1,23 @@
 // Register before the spreadsheet bundle so its global shortcuts cannot consume chat input.
 (() => {
   const panelFor = event => event.target instanceof Element ? event.target.closest('.returns-panel') : null;
+  window.addEventListener('copy', event => {
+    if (panelFor(event)) return;
+    const detail = {event, handled: false};
+    window.dispatchEvent(new CustomEvent('victor-copy-data', {detail}));
+    if (detail.handled) { event.preventDefault(); event.stopImmediatePropagation(); }
+  }, true);
   for (const type of ['copy', 'cut', 'paste', 'contextmenu']) {
     window.addEventListener(type, event => {
       if (panelFor(event)) event.stopImmediatePropagation();
     }, true);
   }
   window.addEventListener('keydown', event => {
+    if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'c' && !panelFor(event)) {
+      const detail = {event, handled: false};
+      window.dispatchEvent(new CustomEvent('victor-copy-selection', {detail}));
+      if (detail.handled) { event.preventDefault(); event.stopImmediatePropagation(); return; }
+    }
     if (['Backspace', 'Delete'].includes(event.key) && !panelFor(event)) {
       const detail = {event, handled: false};
       window.dispatchEvent(new CustomEvent('victor-clear-selection', {detail}));
