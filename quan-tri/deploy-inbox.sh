@@ -20,6 +20,7 @@ php -d display_errors=1 "$source_dir/quan-tri/test-team.php"
 php -d display_errors=1 "$source_dir/quan-tri/test-people.php"
 php -d display_errors=1 "$source_dir/quan-tri/test-hr-access.php"
 php -d display_errors=1 "$source_dir/quan-tri/test-board-report.php"
+php -d display_errors=1 "$source_dir/quan-tri/test-returns.php"
 cp "$root/public_html/api/orders.php" "$release/orders.php"
 php "$source_dir/quan-tri/patch-orders-default.php" "$release/orders.php"
 php -l "$release/orders.php"
@@ -39,7 +40,7 @@ mkdir -p "$assets"
 cp -a dist/assets/. "$assets/"
 find "$assets" -type d -exec chmod 0755 {} +
 find "$assets" -type f -exec chmod 0644 {} +
-for file in board-products.php quality-lib.php quality.php quality.js quality.css quality-notice.js date-picker.js workbook-time.php board-report.php report-dates.php board-report-view.php stock-view.php board-report.js board-report.css date-presets.js web-period.js hr-nav-links.php hr-access.php leave-lib.php payroll-runs.php notifications-state.js password-lib.php password.php notifications-lib.php notifications.php notifications.js notifications.css payroll-lib.php activity.js people-lib.php people-api.php people.php people.js people.css identity-view.php team.php lib.php workbook-lib.php inbox-flow.php api.php sheet-api.php workbook-api.php workbook-export.php team-ui.js admin.css admin.js spreadsheet-view.php index.php; do
+for file in returns-lib.php returns-api.php board-products.php quality-lib.php quality.php quality.js quality.css quality-notice.js date-picker.js workbook-time.php board-report.php report-dates.php board-report-view.php stock-view.php board-report.js board-report.css date-presets.js web-period.js hr-nav-links.php hr-access.php leave-lib.php payroll-runs.php notifications-state.js password-lib.php password.php notifications-lib.php notifications.php notifications.js notifications.css payroll-lib.php activity.js people-lib.php people-api.php people.php people.js people.css identity-view.php team.php lib.php workbook-lib.php inbox-flow.php api.php sheet-api.php workbook-api.php workbook-export.php team-ui.js admin.css admin.js spreadsheet-view.php index.php; do
  install -m 0644 "$source_dir/quan-tri/$file" "$root/public_html/quan-tri/$file.new"
  mv "$root/public_html/quan-tri/$file.new" "$root/public_html/quan-tri/$file"
 done
