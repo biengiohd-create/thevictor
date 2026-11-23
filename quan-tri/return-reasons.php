@@ -10,7 +10,7 @@ function return_result_counts(array $result,array $keys):array {
 }
 function receipt_reason_report(PDO $db,array $input):array {
  team_require_owner();$range=report_range($input);$gender=(string)($input['gender']??'');$sku=mb_strtoupper(trim((string)($input['sku']??'')),'UTF-8');if(!in_array($gender,['','Nam','Nữ'],true))throw new RuntimeException('Nhóm không hợp lệ.',400);
- $catalog=board_catalog($db);$board=board_rows($db,$catalog);$flow=stock_flow($db,$board['rows']);$cases=[];foreach($flow['cases'] as $case)$cases[$case['tracking']]=$case;
+ $catalog=board_catalog($db);$board=board_rows($db,$catalog);$flow=stock_flow($db,$board['rows'],true);$cases=[];foreach($flow['cases'] as $case)$cases[$case['tracking']]=$case;
  $total=array_fill_keys(['delivered','returning','received','shipping','unknown'],0);$products=[];$orders=[];
  foreach($flow['outcomes'] as $outcome){$row=$outcome['row'];$result=$outcome['result'];if(!$row['date']||$row['date']<$range['from']||$row['date']>$range['to'])continue;$bySku=[];foreach(stock_item_map($row['items']) as $key=>$qty){[$code]=explode('|',$key,2);if(($sku!==''&&$sku!==$code)||($gender!==''&&($catalog[$code]['gender']??$row['gender'])!==$gender))continue;$bySku[$code][]=$key;}
   $keys=[];foreach($bySku as $code=>$productKeys){$keys=array_merge($keys,$productKeys);$counts=return_result_counts($result,$productKeys);$products[$code]??=['sku'=>$code]+array_fill_keys(array_keys($total),0);foreach($total as $state=>$unused)$products[$code][$state]+=$counts[$state];}if(!$keys)continue;$counts=return_result_counts($result,$keys);foreach($total as $state=>$unused)$total[$state]+=$counts[$state];if(!$counts['returned'])continue;
