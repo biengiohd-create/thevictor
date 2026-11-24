@@ -37,7 +37,7 @@ php "$source_dir/quan-tri/patch-orders-default.php" "$release/orders.php"
 php -l "$release/orders.php"
 cd "$source_dir/quan-tri/workbook-src"
 npm ci --ignore-scripts --no-audit --no-fund --cache "$release/npm-cache"
-node --test load-policy.test.js serial-fill-core.test.js total-row-core.test.js returns-panel-state.test.js touch-motion.test.js copy-width-core.test.js clear-ranges.test.js pinch-zoom.test.js sheet-name-policy.test.js row-time.test.js grid-defaults.test.js
+node --test returns-message-lines.test.js load-policy.test.js serial-fill-core.test.js total-row-core.test.js returns-panel-state.test.js touch-motion.test.js copy-width-core.test.js clear-ranges.test.js pinch-zoom.test.js sheet-name-policy.test.js row-time.test.js grid-defaults.test.js
 node --test "$source_dir/quan-tri/notifications-state.test.js"
 node --max-old-space-size=2048 node_modules/vite/bin/vite.js build --configLoader runner
 node notices.cjs
