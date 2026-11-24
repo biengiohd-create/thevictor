@@ -1,6 +1,19 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__.'/workbook-lib.php';
+require_once __DIR__.'/report-dates.php';
+function gsync_normalize_headers(array &$data):void {
+ $head=&$data[0];if(!is_array($head))$head=[];$labels=[];foreach($head as $c=>$cell)$labels[$c]=report_fold((string)($cell['v']??''));
+ $signature=0;foreach([1=>'TIEN',2=>'TEN KHACH',3=>'SDT',4=>'DIA CHI'] as $c=>$label)if(str_starts_with($labels[$c]??'',$label))$signature++;
+ $orderLike=$signature>=3;
+ if($orderLike||($labels[5]??'')==='MA DON HANG')$head[5]=['v'=>'Sản phẩm / size','t'=>1];
+ $tracking=null;foreach($head as $c=>&$cell){$label=report_fold((string)($cell['v']??''));if((int)$c!==5&&in_array($label,['MA DON HANG','MA VAN DON','VAN DON','SO VAN DON','MA DON','MA GIAO HANG'],true)){$cell=['v'=>'Mã vận đơn','t'=>1];$tracking=(int)$c;}}
+ unset($cell);
+ if($orderLike&&$tracking===null){for($c=6;$c<min(30,max(13,count($head)));$c++){$seen=0;$codes=0;foreach($data as $r=>$cells){if((int)$r<1)continue;$value=trim((string)($cells[$c]['v']??''));if($value==='')continue;$seen++;if(preg_match('/^\d{10,18}$/D',$value))$codes++;if($seen>=25)break;}if($seen>=3&&$codes/$seen>=0.8){$head[$c]=['v'=>'Mã vận đơn','t'=>1];break;}}}
+ foreach($head as &$cell){if(report_fold((string)($cell['v']??''))==='CAO/NANG')$cell['v']='Chiều cao / cân nặng';$cell['s']='header';}unset($cell);
+ $a=report_fold((string)($head[0]['v']??''));if($a===''||$a==='THOI GIAN'){$serials=0;foreach($data as $r=>$cells){if((int)$r<1)continue;$v=$cells[0]['v']??null;if(is_numeric($v)&&(float)$v>=1&&(float)$v<=50000&&floor((float)$v)==(float)$v)$serials++;if($serials>=3)break;}$head[0]=['v'=>$serials>=3?'STT':($a===''?'THỜI GIAN':$head[0]['v']),'t'=>1,'s'=>'header'];}
+ unset($head);
+}
 function gsync_schema(PDO $db):void {
  $db->exec('CREATE TABLE IF NOT EXISTS google_sync_state(id INTEGER PRIMARY KEY CHECK(id=1),manifest TEXT NOT NULL,stamp INTEGER NOT NULL,initialized INTEGER NOT NULL DEFAULT 0,last_at TEXT NOT NULL DEFAULT "");CREATE TABLE IF NOT EXISTS google_sync_sheets(id TEXT PRIMARY KEY,stamp INTEGER NOT NULL,payload TEXT NOT NULL)');
 }
@@ -19,13 +32,8 @@ function gsync_sheet(array $p):array {
  if(!is_string($id)||!preg_match('/^google-[0-9]{1,20}$/D',$id)||!is_array($rows)||!array_is_list($rows)||count($rows)>50000)throw new RuntimeException('Dữ liệu sheet không hợp lệ.',400);
  $data=[];$cols=13;$count=0;
  foreach($rows as $r=>$row){if(!is_array($row)||!array_is_list($row)||count($row)>512)throw new RuntimeException('Hàng không hợp lệ.',400);$cols=max($cols,count($row));foreach($row as $c=>$v){if(!is_scalar($v)&&$v!==null)throw new RuntimeException('Giá trị ô không hợp lệ.',400);if($v===null||$v==='')continue;if(++$count>500000)throw new RuntimeException('Sheet quá lớn.',413);$data[$r][$c]=['v'=>$v,'t'=>is_int($v)||is_float($v)?2:1];}}
- // This source uses F for products and L for carrier tracking, with identical headers.
- $head=&$data[0];if(!is_array($head))$head=[];
- if(mb_strtoupper(trim((string)($head[5]['v']??'')),'UTF-8')==='MÃ ĐƠN HÀNG')$head[5]=['v'=>'Sản phẩm / size','t'=>1];
- foreach($head as $c=>&$cell)if((int)$c!==5&&mb_strtoupper(trim((string)($cell['v']??'')),'UTF-8')==='MÃ ĐƠN HÀNG')$cell=['v'=>'Mã vận đơn','t'=>1];unset($cell);
- foreach($head as &$cell){$v=mb_strtoupper(trim((string)($cell['v']??'')),'UTF-8');if($v==='CAO/NẶNG')$cell['v']='Chiều cao / cân nặng';$cell['s']='header';}unset($cell);
- // A is blank in the order source. Do not invent creation times for historical rows.
- if(trim((string)($head[0]['v']??''))==='')$head[0]=['v'=>'THỜI GIAN','t'=>1,'s'=>'header'];unset($head);
+ // Source F holds products even when staff mistype the header. Right tracking follows headers/content.
+ gsync_normalize_headers($data);
  return ['id'=>$id,'name'=>$id,'rowCount'=>max(50,count($rows)+10),'columnCount'=>$cols,'defaultRowHeight'=>32,'defaultColumnWidth'=>140,'freeze'=>['xSplit'=>0,'ySplit'=>1,'startRow'=>1,'startColumn'=>0],'cellData'=>$data,'columnData'=>[0=>['w'=>110],1=>['w'=>140],2=>['w'=>200],3=>['w'=>150],4=>['w'=>420],5=>['w'=>300],6=>['w'=>260]]];
 }
 function gsync_receive(PDO $db,array $input,?callable $backup=null):array {

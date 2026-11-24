@@ -23,3 +23,7 @@ $before=wb_current($db);try{gsync_receive($db,['stamp'=>400,'manifest'=>$m,'shee
 echo "GOOGLE_SYNC_TESTS_PASSED\n";
 
 $legacy=gsync_sheet(['id'=>'google-30','values'=>[['','TIỀN','TÊN KHÁCH','SDT','ĐỊA CHỈ','MÃ ĐƠN HÀNG','NOTE','CHECK SIZE','TẠO ĐƠN','TÌNH TRẠNG','MÃ ĐƠN HÀNG','hoàn']]]);gscheck($legacy['cellData'][0][10]['v']==='Mã vận đơn'&&$legacy['cellData'][0][11]['v']==='hoàn','historical tracking position is detected by header, not fixed column');
+
+$wrong=gsync_sheet(['id'=>'google-40','values'=>[['','TIỀN','TÊN KHÁCH','SDT','ĐỊA CHỈ','NHÂN VIÊN GHI SAI TÊN','','','','','','SỐ GỬI'],[1,529000,'A','0900000000','Địa chỉ','E1 S','','','','','','842625221094'],[2,529000,'B','0900000001','Địa chỉ','E4 M','','','','','','842625221095'],[4,529000,'C','0900000002','Địa chỉ','E2 L','','','','','','842625221096']]]);
+gscheck($wrong['cellData'][0][5]['v']==='Sản phẩm / size'&&$wrong['cellData'][0][11]['v']==='Mã vận đơn','source order layout and tracking content override mistyped header labels');gscheck($wrong['cellData'][0][0]['v']==='STT'&&$wrong['cellData'][3][0]['v']===4,'source serial numbers are not mislabeled as creation times');gscheck($wrong['cellData'][1][5]['v']==='E1 S'&&$wrong['cellData'][1][11]['v']==='842625221094','header normalization never changes products or tracking values');
+echo "SOURCE_HEADER_TESTS_PASSED\n";
