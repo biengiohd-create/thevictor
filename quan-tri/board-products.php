@@ -1,13 +1,16 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__.'/report-dates.php';
+require_once __DIR__.'/product-modes.php';
 function board_size(string $size): string {return str_replace(['XXXL','XXL',' '],['3XL','2XL',''],report_fold($size));}
 function board_parse_side(string $text,array $catalog): array {
  $out=[];$errors=[];$parts=preg_split('/\s*\+\s*|[;\r\n]+/u',mb_strtoupper(trim($text),'UTF-8'),-1,PREG_SPLIT_NO_EMPTY);if(!$parts)return ['items'=>[],'errors'=>['Chưa có sản phẩm']];
  foreach($parts as $part){$found=[];foreach($catalog as $sku=>$p)if(preg_match('/(?<![\pL\pN])'.preg_quote((string)$sku,'/').'(?![\pL\pN])/u',$part))$found[]=(string)$sku;
   if(!$found){$plain=report_fold($part);foreach($catalog as $sku=>$p){$name=report_fold((string)$p['name']);if(mb_strlen($name)>5&&str_contains($plain,$name))$found[]=(string)$sku;}}
-  if(count($found)!==1){$hint=[];if(preg_match('/(?<![A-Z0-9])([A-Z]{1,8}\d{1,6})(?![A-Z0-9])/u',$part,$token)){foreach(array_keys($catalog) as $candidate){$distance=levenshtein($token[1],(string)$candidate);if($distance<=1)$hint[]=(string)$candidate;}}$errors[]='Mã sản phẩm chưa khớp danh mục website: '.$part.($hint?' · Kiểm tra '.implode(' / ',array_slice($hint,0,3)):'');continue;}
-  $sku=$found[0];$without=preg_replace('/(?<![\pL\pN])'.preg_quote($sku,'/').'(?![\pL\pN])/u',' ',$part);$size='';
+  if(count($found)!==1){$hint=[];if(preg_match('/(?<![A-Z0-9])([A-Z][A-Z0-9_-]*[0-9][A-Z0-9_-]*)(?![A-Z0-9])/u',$part,$token))$hint=product_near_matches($token[1],$catalog);$errors[]=($hint?'Nghi viết sai mã sản phẩm: ':'Mã sản phẩm chưa được xác nhận: ').$part.($hint?' · Đối chiếu '.implode(' / ',$hint).' · Cần xác nhận trước khi gửi hàng.':'');continue;}
+  $sku=$found[0];preg_match_all('/(?<![A-Z0-9])([A-Z][A-Z0-9_-]*[0-9][A-Z0-9_-]*)(?![A-Z0-9])/u',$part,$tokens);$extra=array_values(array_filter(array_unique($tokens[1]),static fn($v)=>$v!==$sku&&!preg_match('/^X\d+$/D',$v)));
+  if($extra){foreach($extra as $token){$hint=product_near_matches($token,$catalog);$errors[]=($hint?'Nghi viết sai mã sản phẩm: ':'Mã sản phẩm chưa được xác nhận: ').$token.($hint?' · Đối chiếu '.implode(' / ',$hint):'').' · Cần xác nhận trước khi gửi hàng.';}continue;}
+  $without=preg_replace('/(?<![\pL\pN])'.preg_quote($sku,'/').'(?![\pL\pN])/u',' ',$part);$size='';
   if(preg_match('/(?:SIZE\s*[:\-]?\s*)?(?<![\pL\pN])(ONE\s*SIZE|FREE\s*SIZE|FREESIZE|XS|S|M|L|XL|[2-9]XL|XXXL|XXL)(?![\pL\pN])/u',$without,$m))$size=board_size($m[1]);elseif(preg_match('/SIZE\s*[:\-]?\s*(\d{2})(?!\d)/u',$without,$m))$size=$m[1];elseif(preg_match('/^\s*(\d{2})\s*$/u',$without,$m))$size=$m[1];
   if($size===''){$errors[]='Thiếu hoặc sai size: '.$part;continue;}$qty=1;$amounts=[];if(preg_match('/[×X]\s*(\d+)\b/u',$without,$m))$amounts[]=(int)$m[1];if(preg_match('/^\s*(\d+)\s+'.preg_quote($sku,'/').'\b/u',$part,$m))$amounts[]=(int)$m[1];if(preg_match('/\(\s*(\d+)\s*(?:CHIẾC|CÁI|SP)\s*\)/u',$part,$m))$amounts[]=(int)$m[1];$amounts=array_unique($amounts);if(count($amounts)>1){$errors[]='Số lượng không thống nhất: '.$part;continue;}if($amounts)$qty=reset($amounts);if($qty<1||$qty>10000){$errors[]='Số lượng không hợp lệ: '.$part;continue;}
   $sizes=array_map('board_size',$catalog[$sku]['sizes']??[]);if($sizes&&!in_array($size,$sizes,true))$errors[]=$sku.' không có size '.$size.' trên website ('.implode(', ',$sizes).')';

@@ -1,6 +1,15 @@
 <?php
 declare(strict_types=1);
 function product_modes_schema(PDO $db):void {$db->exec("CREATE TABLE IF NOT EXISTS product_modes(sku TEXT NOT NULL,effective TEXT NOT NULL,kind TEXT NOT NULL,gender TEXT NOT NULL,actor TEXT NOT NULL,updated_at TEXT NOT NULL,PRIMARY KEY(sku,effective))");}
+function product_near_matches(string $sku,array $catalog):array {
+ $sku=strtoupper(trim($sku));if(isset($catalog[$sku]))return [];$matches=[];
+ foreach(array_keys($catalog) as $known){$known=(string)$known;if($known===$sku)continue;$distance=levenshtein($sku,$known);$swap=false;if(strlen($sku)===strlen($known)){$diff=[];for($i=0;$i<strlen($sku);$i++)if($sku[$i]!==$known[$i])$diff[]=$i;if(count($diff)===2&&$diff[1]===$diff[0]+1)$swap=$sku[$diff[0]]===$known[$diff[1]]&&$sku[$diff[1]]===$known[$diff[0]];}
+  if($distance===1||$swap)$matches[]=$known;
+ }return array_slice($matches,0,5);
+}
+function product_modes_review(PDO $db,array $catalog):array {
+ product_modes_schema($db);$out=[];foreach($db->query("SELECT sku,gender FROM product_modes WHERE actor='auto' GROUP BY sku") as $r)if(!isset($catalog[$r['sku']])&&($near=product_near_matches($r['sku'],$catalog)))$out[]=['sku'=>$r['sku'],'gender'=>$r['gender'],'suggestions'=>$near];return $out;
+}
 function product_mode_at(array $product,string $day):string {foreach($product['modes']??[] as $m)if($m['effective']<=$day)return $m['kind'];return $product['defaultKind']??'normal';}
 function product_sku_kind(array $catalog,string $sku,string $day):string {
  if($sku==='E1234'){$types=[];foreach(['E1','E2','E3','E4'] as $s)$types[]=product_mode_at($catalog[$s]??[],$day);return count(array_unique($types))===1?$types[0]:'mixed';}
@@ -21,7 +30,8 @@ function product_modes_extend(PDO $db,array $catalog):array {
  }
  if(in_array('marketing_rows',$tables,true))foreach($db->query('SELECT DISTINCT sku,gender FROM marketing_rows WHERE active=1') as $r){$sku=trim($r['sku']);if($sku!=='E1234'&&!isset($catalog[$sku])&&preg_match('/^[A-Z]{1,8}\d{1,6}$/D',$sku)){$found[$sku]??=[];if(in_array($r['gender'],['Nam','Nữ'],true))$found[$sku][$r['gender']]=true;}}
  $insert=$db->prepare('INSERT OR IGNORE INTO product_modes VALUES(?,"0001-01-01","test",?,"auto",?)');foreach($found as $sku=>$g)$insert->execute([$sku,count($g)===1?array_key_first($g):'',gmdate('c')]);
- foreach($db->query('SELECT * FROM product_modes ORDER BY sku,effective DESC') as $m){$sku=$m['sku'];if(!isset($catalog[$sku]))$catalog[$sku]=['sku'=>$sku,'name'=>$sku,'gender'=>$m['gender'],'defaultKind'=>'test'];$catalog[$sku]['modes'][]=$m;if($m['gender']!==''&&empty($catalog[$sku]['modeGenderSet'])){$catalog[$sku]['gender']=$m['gender'];$catalog[$sku]['modeGenderSet']=true;}}
+ $records=$db->query('SELECT * FROM product_modes ORDER BY sku,effective DESC')->fetchAll(PDO::FETCH_ASSOC);$canonical=$catalog;foreach($records as $m)if($m['actor']!=='auto')$canonical[$m['sku']]??=['sku'=>$m['sku']];
+ foreach($records as $m){$sku=$m['sku'];if(!isset($canonical[$sku])&&product_near_matches($sku,$canonical))continue;if(!isset($catalog[$sku]))$catalog[$sku]=['sku'=>$sku,'name'=>$sku,'gender'=>$m['gender'],'defaultKind'=>'test'];$catalog[$sku]['modes'][]=$m;if($m['gender']!==''&&empty($catalog[$sku]['modeGenderSet'])){$catalog[$sku]['gender']=$m['gender'];$catalog[$sku]['modeGenderSet']=true;}}
  $today=(new DateTimeImmutable('now',new DateTimeZone('Asia/Ho_Chi_Minh')))->format('Y-m-d');foreach($catalog as &$p){$p['kind']=product_mode_at($p,$today);$p['isTest']=$p['kind']==='test';}unset($p);ksort($catalog);$cache[$key]=$catalog;return $catalog;
 }
 function product_mode_save(PDO $db,array $input,array $user):array {

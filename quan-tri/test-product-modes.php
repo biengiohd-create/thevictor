@@ -12,3 +12,14 @@ $only=report_unified($db,$input+['product_kind'=>'test']);mode_check($only['grou
 product_mode_save($db,['sku'=>'JB2','kind'=>'normal','gender'=>'Nữ','effective'=>'2026-11-25'],['username'=>'fixture']);$c=board_catalog($db);mode_check(product_sku_kind($c,'JB2','2026-11-24')==='test'&&product_sku_kind($c,'JB2','2026-11-25')==='normal','transition to physical goods preserves historical test classification');
 mode_check(product_row_kind($c,['valid'=>true,'date'=>'2026-11-24','items'=>[['sku'=>'BASE900'],['sku'=>'JB2']]])==='mixed','mixed order is a separate cohort without invented money allocation');mode_check(product_sku_kind($c,'E1234','2026-11-24')==='normal','E1234 group is not misclassified as a new test SKU');
 echo "PRODUCT_MODE_TESTS_PASSED\n";
+
+$db->exec("INSERT OR IGNORE INTO stock_products VALUES('KGH90','Fixture đúng 90','Nam'),('KBH77','Fixture đúng 77','Nam')");
+$s['sheets']['test']['cellData'][2]=[0=>['v'=>529000],1=>['v'=>'KGG90 S']];$s['sheets']['test']['cellData'][3]=[0=>['v'=>529000],1=>['v'=>'KGH77 L']];$db->prepare('UPDATE staff_workbook SET snapshot=?,version=version+1')->execute([json_encode($s)]);$c=board_catalog($db);
+mode_check(!isset($c['KGG90'],$c['KGH77'])&&isset($c['JB2']),'near-name typos are quarantined instead of becoming new test products');
+$a=board_lines('KGG90 S',$c);$b=board_lines('KGH77 L',$c);mode_check(!$a['items']&&str_contains(implode(' ',$a['errors']),'KGH90')&&!$b['items']&&str_contains(implode(' ',$b['errors']),'KBH77'),'actual screenshot typos warn with the correct existing SKU for review');
+mode_check(in_array('KGH90',product_near_matches('KHG90',$c),true),'adjacent transposed letters are also detected');
+mode_check(board_lines('BASE900 S KGH77 L',$c)['errors']!==[],'known SKU never hides an unknown SKU in the same product field');
+mode_check(count(product_modes_review($db,$c))>=2,'suspect auto-discoveries remain available for explicit owner review');
+mode_check(wb_current($db)['snapshot']['sheets']['test']['cellData'][2][1]['v']==='KGG90 S','suspect detection never silently rewrites source product text');
+product_mode_save($db,['sku'=>'KGG90','kind'=>'test','gender'=>'Nam','effective'=>'2026-11-25'],['username'=>'owner']);$c=board_catalog($db);mode_check(isset($c['KGG90'])&&!board_lines('KGG90 S',$c)['errors'],'owner can explicitly confirm a truly new near-name code');
+echo "SUSPECT_PRODUCT_TESTS_PASSED\n";

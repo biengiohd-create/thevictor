@@ -18,7 +18,7 @@ function report_unified_core(PDO $db,array $input,array $catalog,array $board):a
 
 function report_unified(PDO $db,array $input):array {
  $kind=(string)($input['product_kind']??'all');if(!in_array($kind,['all','test','normal','mixed','unclassified'],true))throw new RuntimeException('Loại sản phẩm không hợp lệ.',400);
- $catalog=board_catalog($db);$board=board_rows($db,$catalog);$result=report_unified_core($db,$input,$catalog,$board);$result['productKind']=$kind;$result['segments']=[];
+ $catalog=board_catalog($db);$board=board_rows($db,$catalog);$result=report_unified_core($db,$input,$catalog,$board);$result['reviewProducts']=product_modes_review($db,$catalog);$result['productKind']=$kind;$result['segments']=[];
  foreach(['normal','test','mixed','unclassified'] as $type){$part=$type===$kind?$result:report_unified_core($db,array_replace($input,['product_kind'=>$type]),$catalog,$board);$result['segments'][$type]=$part['groups']['total'];unset($part);}
  return $result;
 }

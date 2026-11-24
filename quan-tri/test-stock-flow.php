@@ -27,3 +27,6 @@ $quantity['items']=[['sku'=>'E1','size'=>'S','qty'=>1],['sku'=>'E2','size'=>'M',
 check(!stock_full_delivery('OK HOÀN')&&!stock_full_delivery('OK E1, E2 CHẬT')&&stock_full_delivery("\xc2\xa0ok 529k\xc2\xa0"),'return markers stay distinct from full delivery and unicode spaces normalize');
 check(stock_delivery_money('abc')===null&&stock_delivery_money('529.000')===529000,'invalid money stays unknown instead of fabricated zero');
 echo "DELIVERY_REVENUE_TESTS_PASSED\n";
+
+$bad=$order;$bad['tracking']='99990001';$bad['valid']=false;$bad['text']='E1 S + KGH77 M';$bad['items']=[['sku'=>'E1','size'=>'S','qty'=>1]];$goodCopy=$bad;$goodCopy['valid']=true;$goodCopy['text']='E1 S';$f=stock_flow($clean,[$bad,$goodCopy]);check(!$f['totals']&&count($f['invalidRows'])===1&&$f['deliveryWarnings'],'invalid product field blocks the entire tracking group from stock allocation');
+echo "INVALID_PRODUCT_STOCK_TESTS_PASSED\n";
