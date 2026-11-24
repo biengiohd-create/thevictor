@@ -46,16 +46,17 @@ rt_assert(returns_enqueue($db,$queueInput,$staff)===$queued,'queued submission r
 $another=returns_enqueue($db,['body'=>'999999999997 E1 S DÀI','requestKey'=>'66666666-6666-4666-a666-666666666666'],['username'=>'custom','name'=>'Custom','group'=>'','owner'=>false,'rights'=>[]]);
 rt_assert($another['message']['processing']==='pending','every account group may enqueue without workbook edit rights');
 try{returns_enqueue($db,['id'=>$qid,'revision'=>1,'body'=>'Không được sửa','requestKey'=>'77777777-7777-4777-a777-777777777777'],$staff);throw new RuntimeException('employee edit accepted');}catch(RuntimeException $e){rt_assert($e->getCode()===403,'employee cannot edit even own return message');}
-$processed=returns_process($db,['id'=>$qid,'revision'=>1]);rt_assert($processed['message']['processing']==='done'&&$processed['message']['entries'][0]['state']==='matched'&&$processed['message']['entries'][1]['state']==='missing','durable queued body scanned and mixed outcomes retained');
+$processed=returns_process($db,['id'=>$qid,'revision'=>1]);rt_assert($processed['message']['revision']===1,'background scan preserves content revision for managers editing during scan');
+rt_assert($processed['message']['processing']==='done'&&$processed['message']['entries'][0]['state']==='matched'&&$processed['message']['entries'][1]['state']==='missing','durable queued body scanned and mixed outcomes retained');
 $again=returns_process($db,['id'=>$qid,'revision'=>1]);rt_assert($again['message']['revision']===$processed['message']['revision'],'repeated background processing cannot apply twice');
-try{returns_approve($db,['id'=>$qid,'revision'=>2,'line'=>1],$staff);throw new RuntimeException('employee approve accepted');}catch(RuntimeException $e){rt_assert($e->getCode()===403,'employee cannot approve via direct API helper');}
-$beforeApproval=wb_current($db);$approved=returns_approve($db,['id'=>$qid,'revision'=>2,'line'=>1],$manager);
+try{returns_approve($db,['id'=>$qid,'revision'=>1,'line'=>1],$staff);throw new RuntimeException('employee approve accepted');}catch(RuntimeException $e){rt_assert($e->getCode()===403,'employee cannot approve via direct API helper');}
+$beforeApproval=wb_current($db);$approved=returns_approve($db,['id'=>$qid,'revision'=>1,'line'=>1],$manager);
 rt_assert($approved['message']['manual_approvals'][1]['actor']==='manager'&&$approved['message']['entries'][1]['state']==='missing','manual approval records actor without fabricating a match');
 rt_assert(wb_current($db)===$beforeApproval,'manual approval never changes workbook or stock source data');
-try{returns_approve($db,['id'=>$qid,'revision'=>2,'line'=>1],$manager);throw new RuntimeException('stale approval accepted');}catch(RuntimeException $e){rt_assert($e->getCode()===409,'stale manual approval rejected');}
-$updated=returns_enqueue($db,['id'=>$qid,'revision'=>3,'body'=>'999999999996 E1 M NGẮN','requestKey'=>'88888888-8888-4888-a888-888888888888'],$manager);
+try{returns_approve($db,['id'=>$qid,'revision'=>1,'line'=>1],$manager);throw new RuntimeException('stale approval accepted');}catch(RuntimeException $e){rt_assert($e->getCode()===409,'stale manual approval rejected');}
+$updated=returns_enqueue($db,['id'=>$qid,'revision'=>2,'body'=>'999999999996 E1 M NGẮN','requestKey'=>'88888888-8888-4888-a888-888888888888'],$manager);
 rt_assert(!$updated['message']['manual_approvals']&&$updated['message']['processing']==='pending','editing resets manual approval and starts a new scan');
-rt_assert(returns_process($db,['id'=>$qid,'revision'=>2])['message']['revision']===4,'stale scan cannot overwrite newer pending edit');
-returns_process($db,['id'=>$qid,'revision'=>4]);
+rt_assert(returns_process($db,['id'=>$qid,'revision'=>1])['message']['revision']===3,'stale scan cannot overwrite newer pending edit');
+returns_process($db,['id'=>$qid,'revision'=>3]);
 rt_assert((int)$db->query("SELECT COUNT(*) FROM people_audit WHERE event='returns_manual_approve'")->fetchColumn()===1,'manual approval is audited');
 echo "RETURN QUEUE AND PERMISSION TESTS PASSED\n";
