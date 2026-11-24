@@ -5,7 +5,7 @@ try{
  if(!admin_logged_in())throw new RuntimeException('Vui lòng đăng nhập.',401);people_require_owner();$user=team_identity();$db=admin_db();mkt_schema($db);
  if($_SERVER['REQUEST_METHOD']==='GET'){
   session_write_close();$action=$_GET['action']??'report';
-  if($action==='revision')mkt_reply(['revision'=>hash('sha256',json_encode($db->query("SELECT id,status,summary FROM marketing_imports ORDER BY id DESC LIMIT 100")->fetchAll()))]);
+  if($action==='revision')mkt_reply(['revision'=>hash('sha256',json_encode([$db->query("SELECT id,status,summary FROM marketing_imports ORDER BY id DESC LIMIT 100")->fetchAll(),$db->query("SELECT version FROM staff_workbook WHERE id=1")->fetchColumn(),$db->query("SELECT count(*) FROM sqlite_master WHERE name='product_modes'")->fetchColumn()?$db->query("SELECT sku,effective,kind,gender,updated_at FROM product_modes ORDER BY sku,effective")->fetchAll():[]]))]);
   if($action==='sources')mkt_reply(['sources'=>$db->query("SELECT id,name,data_date,actor,created_at,status,summary FROM marketing_imports ORDER BY id DESC LIMIT 100")->fetchAll(),'catalog'=>array_values(board_catalog($db)),'policy'=>mkt_policy($db)]);
   if($action==='overview')mkt_reply(report_unified($db,$_GET));
   if($action==='profit')mkt_reply(mkt_profit_days($db,$_GET));
@@ -23,6 +23,7 @@ try{
  }
  if(!str_contains(strtolower($_SERVER['CONTENT_TYPE']??''),'application/json'))throw new RuntimeException('Dữ liệu không hợp lệ.',400);$raw=file_get_contents('php://input',false,null,0,30001);if(strlen($raw)>30000)throw new RuntimeException('Nội dung quá lớn.',413);$data=json_decode($raw,true,512,JSON_THROW_ON_ERROR);$_POST['csrf']=$data['csrf']??null;admin_csrf();session_write_close();$action=$data['action']??'';
  
+ if($action==='product_mode_save')mkt_reply(product_mode_save($db,$data,$user));
  if($action==='cost_save')mkt_reply(mkt_cost_save($db,$data,$user));
  $id=(int)($data['id']??0);$config=$data['config']??null;if(!is_array($config)||!is_array($config['map']??null)||strlen((string)($config['account']??''))>200)throw new RuntimeException('Kiểm tra các cột dữ liệu.',400);foreach($config['map'] as $value)if(!is_int($value)||$value<0||$value>511)throw new RuntimeException('Chỉ số cột không hợp lệ.',400);
  if($action==='inspect'){$q=$db->prepare('SELECT * FROM marketing_imports WHERE id=?');$q->execute([$id]);$source=$q->fetch();if(!$source)throw new RuntimeException('Không tìm thấy nguồn dữ liệu.',404);$result=mkt_parse(mkt_tables($source),$config,board_catalog($db));$result['count']=count($result['rows']);$result['rows']=array_slice($result['rows'],0,100);mkt_reply($result);}
