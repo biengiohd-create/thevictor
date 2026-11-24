@@ -60,3 +60,15 @@ rt_assert(returns_process($db,['id'=>$qid,'revision'=>1])['message']['revision']
 returns_process($db,['id'=>$qid,'revision'=>3]);
 rt_assert((int)$db->query("SELECT COUNT(*) FROM people_audit WHERE event='returns_manual_approve'")->fetchColumn()===1,'manual approval is audited');
 echo "RETURN QUEUE AND PERMISSION TESTS PASSED\n";
+
+// A return scan must not prevent an unrelated unsaved employee edit from saving.
+$before=wb_current($db);$local=$before['snapshot'];$local['sheets']['a']['cellData'][1][3]=['v'=>'Employee unsaved note','t'=>1];
+$changed=returns_write($db,['body'=>'990625039571 E1 S RỘNG BỤNG','requestKey'=>'99999999-9999-4999-a999-999999999999'],$u);
+$rebased=wb_rebase_status_updates($db,$local,$before['version'],wb_current($db)['snapshot']);
+rt_assert($rebased['snapshot']['sheets']['a']['cellData'][1][3]['v']==='Employee unsaved note'&&$rebased['snapshot']['sheets']['a']['cellData'][1][2]['v']==='RỘNG BỤNG','merge return status while preserving unrelated unsaved employee data');
+rt_assert(count($rebased['patches'])===2,'return merged status patches to browser');
+$conflict=$local;$conflict['sheets']['a']['cellData'][1][2]=['v'=>'employee changed same status','t'=>1];
+try{wb_rebase_status_updates($db,$conflict,$before['version'],wb_current($db)['snapshot']);throw new RuntimeException('status collision accepted');}catch(RuntimeException $e){rt_assert($e->getCode()===409,'never overwrite employee change to the same status cell');}
+$unrelated=wb_current($db)['snapshot'];$unrelated['sheets']['a']['cellData'][1][4]=['v'=>'Other remote edit','t'=>1];
+try{wb_rebase_status_updates($db,$local,$before['version'],$unrelated);throw new RuntimeException('unrelated remote change accepted');}catch(RuntimeException $e){rt_assert($e->getCode()===409,'unrelated concurrent server changes retain existing version protection');}
+echo "RETURN INDEPENDENT PROCESSING TESTS PASSED\n";

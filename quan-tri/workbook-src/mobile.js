@@ -1,3 +1,4 @@
+import {zoomPercent,ZOOM_BASE} from './zoom-baseline.js';
 import {setupMobileFrame} from './mobile-frame.js';
 import {pinchZoom} from './pinch-zoom.js';
 import {SetScrollRelativeCommand} from '@univerjs/sheets-ui';
@@ -14,7 +15,7 @@ export function setupMobileSheet({editor,editable,status,touch}){
  const edit=makeButton('Sửa ô',beginEditing);edit.disabled=!editable();
  makeButton('Ẩn phím',finishEditing);
  makeButton('Cuối bảng',()=>{stopCoast();sheet().scrollToCell(sheet().getMaxRows()-1,sheet().getScrollState().sheetViewStartColumn,150);});
- const zoomLabel=document.createElement('output');zoomLabel.className='mobile-zoom-value';const zoomTo=value=>{sheet().zoom(Math.max(.25,Math.min(3,value)));zoomLabel.textContent=Math.round(sheet().getZoom()*100)+'%';};const minus=makeButton('−',()=>zoomTo(sheet().getZoom()-.1));minus.setAttribute('aria-label','Thu nhỏ bảng');bar.append(zoomLabel);const plus=makeButton('+',()=>zoomTo(sheet().getZoom()+.1));plus.setAttribute('aria-label','Phóng to bảng');zoomLabel.textContent=Math.round(sheet().getZoom()*100)+'%';
+ const zoomLabel=document.createElement('output');zoomLabel.className='mobile-zoom-value';const zoomTo=value=>{sheet().zoom(Math.max(.3,Math.min(3.6,value)));zoomLabel.textContent=zoomPercent(sheet().getZoom())+'%';};const minus=makeButton('−',()=>zoomTo(sheet().getZoom()-.1*ZOOM_BASE));minus.setAttribute('aria-label','Thu nhỏ bảng');bar.append(zoomLabel);const plus=makeButton('+',()=>zoomTo(sheet().getZoom()+.1*ZOOM_BASE));plus.setAttribute('aria-label','Phóng to bảng');zoomLabel.textContent=zoomPercent(sheet().getZoom())+'%';
  root.before(bar);const wrapper=document.createElement('div');wrapper.className='mobile-editor-wrap';root.before(wrapper);wrapper.append(root);
  const rail=document.createElement('div');rail.className='mobile-scroll-rail';const slider=document.createElement('input');slider.type='range';slider.min='0';slider.step='1';slider.setAttribute('aria-label','Cuộn đến dòng');slider.setAttribute('orient','vertical');const label=document.createElement('output');rail.append(slider,label);wrapper.append(rail);
 
@@ -50,7 +51,7 @@ export function setupMobileSheet({editor,editable,status,touch}){
  root.addEventListener('click',e=>{if(performance.now()<suppressClickUntil){e.preventDefault();e.stopImmediatePropagation();}},{capture:true,signal});
  slider.onpointerdown=()=>{stopCoast();draggingRail=true;};slider.onpointerup=slider.onpointercancel=()=>{draggingRail=false;};
  slider.oninput=()=>{const row=+slider.value;label.textContent=String(row+1);sheet().scrollToCell(row,sheet().getScrollState().sheetViewStartColumn);};
- function updateRail(){try{zoomLabel.textContent=Math.round(sheet().getZoom()*100)+'%';const current=sheet(),state=current.getScrollState(),visible=current.getVisibleRange(),count=visible?Math.max(1,visible.endRow-visible.startRow+1):10;slider.max=String(Math.max(0,current.getMaxRows()-count));if(!draggingRail)slider.value=String(Math.min(+slider.max,state.sheetViewStartRow));label.textContent=String(state.sheetViewStartRow+1);slider.setAttribute('aria-valuetext','Dòng '+(state.sheetViewStartRow+1)+' trên '+current.getMaxRows());}catch{}}
+ function updateRail(){try{zoomLabel.textContent=zoomPercent(sheet().getZoom())+'%';const current=sheet(),state=current.getScrollState(),visible=current.getVisibleRange(),count=visible?Math.max(1,visible.endRow-visible.startRow+1):10;slider.max=String(Math.max(0,current.getMaxRows()-count));if(!draggingRail)slider.value=String(Math.min(+slider.max,state.sheetViewStartRow));label.textContent=String(state.sheetViewStartRow+1);slider.setAttribute('aria-valuetext','Dòng '+(state.sheetViewStartRow+1)+' trên '+current.getMaxRows());}catch{}}
  function updateViewport(){document.documentElement.style.setProperty('--sheet-viewport-height',(window.visualViewport?.height??innerHeight)+'px');}
  window.visualViewport?.addEventListener('resize',updateViewport,{signal});window.addEventListener('resize',updateViewport,{signal});updateViewport();updateRail();const timer=setInterval(updateRail,180);
  return {dispose(){cancelAnimationFrame(zoomFrame);frame.dispose();abort.abort();observer.disconnect();before.dispose();started.dispose();ended.dispose();clearInterval(timer);stopCoast();unlockInputs();bar.remove();wrapper.before(root);wrapper.remove();document.body.classList.remove('mobile-sheet');document.documentElement.style.removeProperty('--sheet-viewport-height');}};
