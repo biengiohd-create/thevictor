@@ -43,7 +43,16 @@ function mkt_parse(array $tables,array $config,array $catalog): array {
   $ad=$get('ad');$adId=$get('ad_id');$scope=hash('sha256',json_encode([$day,report_fold($account),$campaignId?:report_fold($campaign),$adId?:report_fold($ad)],JSON_UNESCAPED_UNICODE));$rowKey=hash('sha256',$scope.'|'.$sku.'|'.$gender);$value=['row_key'=>$rowKey,'scope_key'=>$scope,'day'=>$day,'account'=>$account,'campaign'=>$campaign?:$campaignId,'campaign_id'=>$campaignId,'ad'=>$ad,'ad_id'=>$adId,'sku'=>$sku,'gender'=>$gender,'spend'=>$spend*$exchange,'fee'=>$fee===null?null:$fee*$exchange,'orders'=>$orders,'scan_value'=>isset($map['value'])?mkt_number($get('value')):null,'account_name'=>trim((string)($config['account_name']??'')),'source_row'=>(int)$r+1];
   $parsed[$rowKey]=$value;
   if(count($parsed)>10000)throw new RuntimeException('Mỗi lần nhập tối đa 10.000 dòng chiến dịch.',413);
- }return ['rows'=>array_values($parsed),'issues'=>$issues,'errors'=>$errors,'spend'=>array_sum(array_column($parsed,'spend'))];
+ }
+ $spend=array_sum(array_column($parsed,'spend'));$verification=$config['verification']??null;
+ if(preg_match('/^\d+$/D',(string)($config['account']??''))||isset($config['scan_version'])){
+  $expectedSpend=is_array($verification)?mkt_number($verification['spend']??''):null;$expectedOrders=is_array($verification)?mkt_number($verification['orders']??''):null;
+  if(($config['scan_version']??0)!==2||$expectedSpend===null||$expectedOrders===null||$expectedSpend<0||$expectedOrders<0)$errors[]=['row'=>0,'text'=>'Cập nhật tiện ích Quét màn MKT 1.8.0 và quét lại để đối chiếu tổng cuối bảng Meta.'];
+  else {foreach($parsed as $r)if($r['day']!==$fallback||$r['account']!==(string)$config['account']){$errors[]=['row'=>0,'text'=>'Bản đối chiếu phải thuộc đúng một tài khoản và một ngày.'];break;}
+   if(abs($spend-$expectedSpend)>1||(float)array_sum(array_column($parsed,'orders'))!==$expectedOrders||in_array(null,array_column($parsed,'orders'),true))$errors[]=['row'=>0,'text'=>'Bản quét chưa khớp tổng Meta. Chưa lưu và giữ nguyên dữ liệu trước đó.'];
+  }
+ }
+ return ['rows'=>array_values($parsed),'issues'=>$issues,'errors'=>$errors,'spend'=>$spend];
 }
 function mkt_import(PDO $db,int $id,array $config,array $user): array {
  $q=$db->prepare('SELECT * FROM marketing_imports WHERE id=?');$q->execute([$id]);$source=$q->fetch();if(!$source)throw new RuntimeException('Không tìm thấy nguồn dữ liệu.',404);if($source['status']==='applied')return json_decode($source['summary'],true,512,JSON_THROW_ON_ERROR);$data=mkt_parse(mkt_tables($source),$config,board_catalog($db));if($data['errors'])throw new RuntimeException('Cần sửa dòng '.$data['errors'][0]['row'].': '.$data['errors'][0]['text'],400);if(!$data['rows'])throw new RuntimeException('Chưa có dòng chiến dịch hợp lệ.',400);
@@ -58,6 +67,10 @@ function mkt_import(PDO $db,int $id,array $config,array $user): array {
  }catch(Throwable $e){$db->exec('ROLLBACK');throw $e;}
 }
 
+function mkt_reconciliation(PDO $db,array $range):array {
+ $groups=[];foreach(mkt_effective_rows($db,$range) as $r){$key=$r['day'].'|'.$r['account'];$groups[$key]??=['day'=>$r['day'],'accountId'=>$r['account'],'account'=>$r['account_name']?:$r['account'],'spend'=>0.0,'orders'=>0.0,'importId'=>(int)$r['import_id']];$groups[$key]['spend']+=(float)$r['spend'];$groups[$key]['orders']+=(float)($r['orders']??0);}
+ $q=$db->prepare('SELECT config,created_at FROM marketing_imports WHERE id=?');foreach($groups as &$g){$q->execute([$g['importId']]);$source=$q->fetch();$config=json_decode($source['config']??'{}',true)?:[];$v=$config['verification']??null;$g['receivedAt']=$source['created_at']??null;$g['metaSpend']=is_array($v)?mkt_number($v['spend']??''):null;$g['metaOrders']=is_array($v)?mkt_number($v['orders']??''):null;$g['difference']=$g['metaSpend']===null?null:$g['spend']-$g['metaSpend'];$g['verified']=($config['scan_version']??0)===2&&$g['difference']!==null&&abs($g['difference'])<=1&&$g['orders']===$g['metaOrders'];}unset($g);return array_values($groups);
+}
 function mkt_policy(PDO $db): ?array {return ['cost_mode'=>'spend_only','fee_percent'=>0.0,'order_source'=>'board'];}
 function mkt_order_counts(PDO $db,string $source,array $range,string $sku,?array $board=null): array {
  $result=['total'=>0,'Nam'=>0,'Nữ'=>0,'products'=>[]];$catalog=board_catalog($db);
