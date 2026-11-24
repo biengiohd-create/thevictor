@@ -22,7 +22,7 @@ function gsync_sheet(array $p):array {
  // This source uses F for products and L for carrier tracking, with identical headers.
  $head=&$data[0];if(!is_array($head))$head=[];
  if(mb_strtoupper(trim((string)($head[5]['v']??'')),'UTF-8')==='MÃ ĐƠN HÀNG')$head[5]=['v'=>'Sản phẩm / size','t'=>1];
- if(mb_strtoupper(trim((string)($head[11]['v']??'')),'UTF-8')==='MÃ ĐƠN HÀNG')$head[11]=['v'=>'Mã vận đơn','t'=>1];
+ foreach($head as $c=>&$cell)if((int)$c!==5&&mb_strtoupper(trim((string)($cell['v']??'')),'UTF-8')==='MÃ ĐƠN HÀNG')$cell=['v'=>'Mã vận đơn','t'=>1];unset($cell);
  foreach($head as &$cell){$v=mb_strtoupper(trim((string)($cell['v']??'')),'UTF-8');if($v==='CAO/NẶNG')$cell['v']='Chiều cao / cân nặng';$cell['s']='header';}unset($cell);
  // A is blank in the order source. Do not invent creation times for historical rows.
  if(trim((string)($head[0]['v']??''))==='')$head[0]=['v'=>'THỜI GIAN','t'=>1,'s'=>'header'];unset($head);

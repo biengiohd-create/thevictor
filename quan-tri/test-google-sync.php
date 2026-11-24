@@ -21,3 +21,5 @@ gsync_receive($db,['stamp'=>100,'manifest'=>$m,'sheets'=>[$a]],$backup);gscheck(
 $m[0]['name']='25/11 NAM';array_pop($m);$r=gsync_receive($db,['stamp'=>300,'manifest'=>$m,'sheets'=>[]],$backup);gscheck(count(wb_current($db)['snapshot']['sheets'])===1&&wb_current($db)['snapshot']['sheets']['google-10']['name']==='25/11 NAM','rename and delete source sheet without duplicating ID');
 $before=wb_current($db);try{gsync_receive($db,['stamp'=>400,'manifest'=>$m,'sheets'=>[['id'=>'google-10','stamp'=>400,'values'=>[[['bad']]]]]],$backup);throw new LogicException('invalid accepted');}catch(RuntimeException $e){gscheck(wb_current($db)===$before,'invalid packet preserves last good board');}
 echo "GOOGLE_SYNC_TESTS_PASSED\n";
+
+$legacy=gsync_sheet(['id'=>'google-30','values'=>[['','TIỀN','TÊN KHÁCH','SDT','ĐỊA CHỈ','MÃ ĐƠN HÀNG','NOTE','CHECK SIZE','TẠO ĐƠN','TÌNH TRẠNG','MÃ ĐƠN HÀNG','hoàn']]]);gscheck($legacy['cellData'][0][10]['v']==='Mã vận đơn'&&$legacy['cellData'][0][11]['v']==='hoàn','historical tracking position is detected by header, not fixed column');

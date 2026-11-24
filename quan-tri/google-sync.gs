@@ -33,8 +33,9 @@ function victorSend(ss,manifest,stamp,sheets) {
 }
 function victorEdit(e) {
   if(!e||!e.range)return;
+  const properties=PropertiesService.getScriptProperties(),dirty='VICTOR_DIRTY_'+e.range.getSheet().getSheetId();properties.setProperty(dirty,String(Date.now()));
   const lock=LockService.getScriptLock();if(!lock.tryLock(1000))return;
-  try{const ss=e.source,stamp=Date.now(),m=victorManifest(ss);victorSend(ss,m,stamp,[victorRead(e.range.getSheet())]);}
+  try{const ss=e.source,stamp=Date.now(),m=victorManifest(ss);victorSend(ss,m,stamp,[victorRead(e.range.getSheet())]);properties.deleteProperty(dirty);}
   finally{lock.releaseLock();}
 }
 function victorChange(e) {const p=PropertiesService.getScriptProperties();p.setProperty('VICTOR_CURSOR','0');p.setProperty('VICTOR_NEXT','0');}
@@ -42,8 +43,9 @@ function victorWorker() {
   const lock=LockService.getScriptLock();if(!lock.tryLock(1000))return;
   const p=PropertiesService.getScriptProperties();
   try {
-    if(Date.now()<Number(p.getProperty('VICTOR_NEXT')||0))return;
-    const ss=SpreadsheetApp.getActiveSpreadsheet();if(ss.getId()!==p.getProperty('VICTOR_FILE'))throw new Error('Sai trang tính nguồn.');
+    const ss=SpreadsheetApp.getActiveSpreadsheet();
+    const dirty=p.getProperties();for(const key of Object.keys(dirty).filter(k=>k.indexOf('VICTOR_DIRTY_')===0)){const sheet=ss.getSheets().find(s=>String(s.getSheetId())===key.slice(13));if(sheet)victorSend(ss,victorManifest(ss),Date.now(),[victorRead(sheet)]);if(p.getProperty(key)===dirty[key])p.deleteProperty(key);}
+    if(Date.now()<Number(p.getProperty('VICTOR_NEXT')||0))return;if(ss.getId()!==p.getProperty('VICTOR_FILE'))throw new Error('Sai trang tính nguồn.');
     const started=Date.now(),manifest=victorManifest(ss),sheets=ss.getSheets(),signature=JSON.stringify(manifest);
     let cursor=Number(p.getProperty('VICTOR_CURSOR')||0);
     if(p.getProperty('VICTOR_MANIFEST')!==signature){cursor=0;p.setProperty('VICTOR_MANIFEST',signature);}
