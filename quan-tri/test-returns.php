@@ -28,10 +28,34 @@ rt_assert(returns_parse('E1 S lý do 990625039571 990624613918',$catalog)[0]['st
 rt_assert(returns_parse("Linh\n09:37\nTin nhắn đã được thu hồi",$catalog)===[],'ignore copied chat metadata');
 $db=new PDO('sqlite::memory:',null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]);wb_schema($db);returns_schema($db);stock_schema($db);$db->exec("INSERT INTO stock_products VALUES('E1','Fixture','Nam')");
 $s=wb_empty();$s['sheetOrder']=['a','b'];$template=$s['sheets']['orders'];unset($s['sheets']['orders']);foreach(['a','b'] as $id){$sheet=$template;$sheet['id']=$id;$sheet['name']=$id;$sheet['cellData']=[0=>[0=>['v'=>'THỜI GIAN'],1=>['v'=>'Mã vận đơn'],2=>['v'=>'Tình trạng']],1=>[0=>['v'=>'07:00:00','custom'=>['victorRowId'=>'row-'.$id]],1=>['v'=>'990625039571'],2=>['v'=>'Cũ','s'=>'header']]];$s['sheets'][$id]=$sheet;}
-wb_store($db,$s,[],0,'fixture');$u=['username'=>'fixture','name'=>'Kiểm thử'];$input=['body'=>'990625039571 E1 S CHẬT','requestKey'=>'11111111-1111-4111-a111-111111111111'];$r=returns_write($db,$input,$u);rt_assert(count($r['message']['entries'][0]['matches'])===2,'search all sheets by exact tracking');rt_assert(count($r['patches'])===2&&$r['patches'][0]['cell']['s']==='header','preserve cell formatting');rt_assert(returns_write($db,$input,$u)===$r,'retry is idempotent');
+wb_store($db,$s,[],0,'fixture');$u=['username'=>'fixture','name'=>'Kiểm thử','owner'=>true];$input=['body'=>'990625039571 E1 S CHẬT','requestKey'=>'11111111-1111-4111-a111-111111111111'];$r=returns_write($db,$input,$u);rt_assert(count($r['message']['entries'][0]['matches'])===2,'search all sheets by exact tracking');rt_assert(count($r['patches'])===2&&$r['patches'][0]['cell']['s']==='header','preserve cell formatting');rt_assert(returns_write($db,$input,$u)===$r,'retry is idempotent');
 $edit=['id'=>$r['message']['id'],'revision'=>1,'body'=>'E1 S RỘNG 990625039571','requestKey'=>'22222222-2222-4222-a222-222222222222'];$r2=returns_write($db,$edit,$u);rt_assert($r2['message']['revision']===2&&$r2['patches'][0]['cell']['v']==='RỘNG','manual chat edit updates reason');
 $cur=wb_current($db);$cur['snapshot']['sheets']['a']['cellData'][1][2]['v']='Nhân viên sửa';wb_store($db,$cur['snapshot'],[],$cur['version'],'fixture');
 $r3=returns_write($db,['id'=>$r2['message']['id'],'revision'=>2,'body'=>'E1 S DÀI 999999999999','requestKey'=>'33333333-3333-4333-a333-333333333333'],$u);$cur=wb_current($db);rt_assert($r3['message']['entries'][0]['state']==='missing','missing tracking red');rt_assert($cur['snapshot']['sheets']['a']['cellData'][1][2]['v']==='Nhân viên sửa','editing chat never reverts a subsequent manual cell edit');rt_assert($cur['snapshot']['sheets']['b']['cellData'][1][2]['v']==='Cũ','correcting tracking restores prior owned cell');
 try{returns_write($db,$edit+[],$u);rt_assert(true,'idempotent old edit remains stable');}catch(Throwable $e){throw $e;}
 $stale=$edit;$stale['requestKey']='44444444-4444-4444-a444-444444444444';try{returns_write($db,$stale,$u);throw new RuntimeException('stale revision accepted');}catch(RuntimeException $e){rt_assert($e->getCode()===409,'reject stale message edit');}
 rt_assert(count(returns_list($db))===1,'shared history persists');rt_assert((int)$db->query("SELECT COUNT(*) FROM people_audit WHERE event='returns_chat'")->fetchColumn()===3,'each create and edit is audited');echo "RETURNS TESTS PASSED\n";
+
+// Queue, authorization, retry and manual approval use only the isolated test DB.
+$staff=['username'=>'employee','name'=>'Employee','group'=>'care','owner'=>false];$manager=['username'=>'manager','name'=>'Manager','group'=>'manager','owner'=>false];
+rt_assert(!returns_can_manage($staff)&&returns_can_manage($manager)&&returns_can_manage($u),'edit and approval restricted to manager or owner');
+$version=wb_current($db)['version'];$queueInput=['body'=>"990625039571 E1 S CHẬT\n999999999998 E1 M RỘNG",'requestKey'=>'55555555-5555-4555-a555-555555555555'];
+$queued=returns_enqueue($db,$queueInput,$staff);$qid=$queued['message']['id'];
+rt_assert($queued['message']['processing']==='pending'&&wb_current($db)['version']===$version,'accept multiline message before workbook processing');
+rt_assert(returns_enqueue($db,$queueInput,$staff)===$queued,'queued submission retry never duplicates a message');
+$another=returns_enqueue($db,['body'=>'999999999997 E1 S DÀI','requestKey'=>'66666666-6666-4666-a666-666666666666'],['username'=>'custom','name'=>'Custom','group'=>'','owner'=>false,'rights'=>[]]);
+rt_assert($another['message']['processing']==='pending','every account group may enqueue without workbook edit rights');
+try{returns_enqueue($db,['id'=>$qid,'revision'=>1,'body'=>'Không được sửa','requestKey'=>'77777777-7777-4777-a777-777777777777'],$staff);throw new RuntimeException('employee edit accepted');}catch(RuntimeException $e){rt_assert($e->getCode()===403,'employee cannot edit even own return message');}
+$processed=returns_process($db,['id'=>$qid,'revision'=>1]);rt_assert($processed['message']['processing']==='done'&&$processed['message']['entries'][0]['state']==='matched'&&$processed['message']['entries'][1]['state']==='missing','durable queued body scanned and mixed outcomes retained');
+$again=returns_process($db,['id'=>$qid,'revision'=>1]);rt_assert($again['message']['revision']===$processed['message']['revision'],'repeated background processing cannot apply twice');
+try{returns_approve($db,['id'=>$qid,'revision'=>2,'line'=>1],$staff);throw new RuntimeException('employee approve accepted');}catch(RuntimeException $e){rt_assert($e->getCode()===403,'employee cannot approve via direct API helper');}
+$beforeApproval=wb_current($db);$approved=returns_approve($db,['id'=>$qid,'revision'=>2,'line'=>1],$manager);
+rt_assert($approved['message']['manual_approvals'][1]['actor']==='manager'&&$approved['message']['entries'][1]['state']==='missing','manual approval records actor without fabricating a match');
+rt_assert(wb_current($db)===$beforeApproval,'manual approval never changes workbook or stock source data');
+try{returns_approve($db,['id'=>$qid,'revision'=>2,'line'=>1],$manager);throw new RuntimeException('stale approval accepted');}catch(RuntimeException $e){rt_assert($e->getCode()===409,'stale manual approval rejected');}
+$updated=returns_enqueue($db,['id'=>$qid,'revision'=>3,'body'=>'999999999996 E1 M NGẮN','requestKey'=>'88888888-8888-4888-a888-888888888888'],$manager);
+rt_assert(!$updated['message']['manual_approvals']&&$updated['message']['processing']==='pending','editing resets manual approval and starts a new scan');
+rt_assert(returns_process($db,['id'=>$qid,'revision'=>2])['message']['revision']===4,'stale scan cannot overwrite newer pending edit');
+returns_process($db,['id'=>$qid,'revision'=>4]);
+rt_assert((int)$db->query("SELECT COUNT(*) FROM people_audit WHERE event='returns_manual_approve'")->fetchColumn()===1,'manual approval is audited');
+echo "RETURN QUEUE AND PERMISSION TESTS PASSED\n";

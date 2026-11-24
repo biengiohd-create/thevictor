@@ -60,7 +60,8 @@ const dailyButton=document.createElement('button');dailyButton.textContent='Tạ
 
 setupReturnsChat({
  identity:()=>user?.username,
- editable:()=>can('edit'),
+ canSend:()=>!!user,
+ canManage:()=>!!user&&(user.owner||user.group==='manager'),
  prepare:async()=>{
   if(saving||loading)throw Error('Bảng đang đồng bộ. Đợi hoàn tất rồi gửi lại.');
   await save();

@@ -7,7 +7,11 @@ function returns_schema(PDO $db): void {
  CREATE TABLE IF NOT EXISTS return_requests(request_key TEXT PRIMARY KEY,payload TEXT NOT NULL,result TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS return_edits(id INTEGER PRIMARY KEY AUTOINCREMENT,message_id INTEGER NOT NULL,actor TEXT NOT NULL,before_body TEXT NOT NULL,after_body TEXT NOT NULL,created_at TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS return_links(sheet_id TEXT NOT NULL,row_key TEXT NOT NULL,message_id INTEGER NOT NULL,tracking TEXT NOT NULL,col INTEGER NOT NULL,reason TEXT NOT NULL,before_cell TEXT,PRIMARY KEY(sheet_id,row_key));");
+ $columns=array_column($db->query('PRAGMA table_info(return_messages)')->fetchAll(),'name');
+ foreach(['processing'=>"TEXT NOT NULL DEFAULT 'done'",'manual_approvals'=>"TEXT NOT NULL DEFAULT '{}'" ] as $column=>$definition)if(!in_array($column,$columns,true))$db->exec('ALTER TABLE return_messages ADD COLUMN '.$column.' '.$definition);
 }
+function returns_can_manage(array $user): bool {return !empty($user['owner'])||($user['group']??'')==='manager';}
+function returns_require_manage(array $user): void {if(!returns_can_manage($user))throw new RuntimeException('Chỉ quản lý và quản trị viên được sửa hoặc duyệt thông báo hoàn.',403);}
 function returns_text(?array $cell): string {
  if(isset($cell['p']['body']['dataStream']))return trim((string)$cell['p']['body']['dataStream']);
  return trim((string)($cell['v']??''));
@@ -42,11 +46,12 @@ function returns_columns(array $sheet): array {
  if($tracking===null&&$status!==null&&isset($map['MA DON HANG'])&&$map['MA DON HANG']>$status)$tracking=$map['MA DON HANG'];
  return [$tracking,$status];
 }
-function returns_message(array $m): array {$m['id']=(int)$m['id'];$m['revision']=(int)$m['revision'];$m['entries']=json_decode($m['entries'],true,512,JSON_THROW_ON_ERROR);return $m;}
+function returns_message(array $m): array {$m['id']=(int)$m['id'];$m['revision']=(int)$m['revision'];$m['entries']=json_decode($m['entries'],true,512,JSON_THROW_ON_ERROR);$m['manual_approvals']=json_decode($m['manual_approvals']??'{}',true,512,JSON_THROW_ON_ERROR);return $m;}
 function returns_list(PDO $db,int $before=0): array {
  $q=$db->prepare('SELECT * FROM return_messages'.($before?' WHERE id<?':'').' ORDER BY id DESC LIMIT 50');$q->execute($before?[$before]:[]);return array_map('returns_message',$q->fetchAll());
 }
-function returns_write(PDO $db,array $input,array $user): array {
+function returns_write(PDO $db,array $input,array $user,bool $processing=false): array {
+ if(!empty($input['id'])&&!$processing)returns_require_manage($user);
  if(!is_string($input['body']??null)||!is_string($input['requestKey']??null)||(isset($input['id'])&&!is_int($input['id']))||(isset($input['revision'])&&!is_int($input['revision'])))throw new RuntimeException('Nội dung yêu cầu không hợp lệ.',400);
  $body=trim((string)($input['body']??''));$key=(string)($input['requestKey']??'');$id=(int)($input['id']??0);
  if($body===''||strlen($body)>25000||!preg_match('/^[a-f0-9-]{36}$/D',$key))throw new RuntimeException('Nhập nội dung tối đa 25.000 ký tự và thử lại.',400);
@@ -63,10 +68,53 @@ function returns_write(PDO $db,array $input,array $user): array {
   foreach($entries as &$entry){$locations=$index[$entry['tracking']]??[];if(!$locations&&$entry['tracking']!==''){$entry['state']='missing';continue;}if($entry['state']!=='ready')continue;$entry['state']='matched';foreach($locations as $loc){$sid=$loc['sheet'];$r=$loc['row'];$c=$loc['col'];$before=$snapshot['sheets'][$sid]['cellData'][$r][$c]??null;$cell=$before??[];unset($cell['f'],$cell['si'],$cell['p']);$cell['v']=$entry['reason'];$cell['t']=1;$snapshot['sheets'][$sid]['cellData'][$r][$c]=$cell;$patches[$sid.'|'.$r.'|'.$c]=$loc+['cell'=>$cell];$db->prepare('INSERT INTO return_links(sheet_id,row_key,message_id,tracking,col,reason,before_cell) VALUES(?,?,?,?,?,?,?) ON CONFLICT(sheet_id,row_key) DO UPDATE SET message_id=excluded.message_id,tracking=excluded.tracking,col=excluded.col,reason=excluded.reason,before_cell=excluded.before_cell')->execute([$sid,$loc['rowKey'],$id,$entry['tracking'],$c,$entry['reason'],json_encode($before,JSON_UNESCAPED_UNICODE)]);$entry['matches'][]=['sheet'=>$loc['name'],'row'=>$r+1];}}unset($entry);
   foreach($patches as $patchKey=>$patch)if(($current['snapshot']['sheets'][$patch['sheet']]['cellData'][$patch['row']][$patch['col']]??null)===$patch['cell'])unset($patches[$patchKey]);
   $version=$current['version'];if($patches){$saved=wb_store($db,$snapshot,$current['sources'],$version,$user['username'],null,[['command'=>'returns_chat.apply','at'=>(int)(microtime(true)*1000)]],true);$version=$saved['version'];}
-  $db->prepare('UPDATE return_messages SET body=?,entries=?,revision=?,updated_at=? WHERE id=?')->execute([$body,json_encode($entries,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR),($old?(int)$old['revision']:0)+1,$now,$id]);
+  $db->prepare("UPDATE return_messages SET processing='done',manual_approvals='{}',body=?,entries=?,revision=?,updated_at=? WHERE id=?")->execute([$body,json_encode($entries,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR),($old?(int)$old['revision']:0)+1,$now,$id]);
   $db->prepare('INSERT INTO return_edits(message_id,actor,before_body,after_body,created_at) VALUES(?,?,?,?,?)')->execute([$id,$user['username'],$old['body']??'',$body,$now]);
   if(function_exists('people_audit'))people_audit('returns_chat',(string)$id,['before'=>$old['body']??'','after'=>$body,'entries'=>$entries],$db);
   $q=$db->prepare('SELECT * FROM return_messages WHERE id=?');$q->execute([$id]);$result=['ok'=>true,'message'=>returns_message($q->fetch()),'baseVersion'=>$current['version'],'version'=>$version,'patches'=>array_values($patches)];
   $db->prepare('INSERT INTO return_requests VALUES(?,?,?)')->execute([$key,$fingerprint,json_encode($result,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)]);$db->exec('COMMIT');return $result;
+ }catch(Throwable $e){$db->exec('ROLLBACK');throw $e;}
+}
+
+// Save a durable message before the expensive workbook scan. Any connected client
+// can resume pending revisions; clients cannot supply or replace the queued body.
+function returns_enqueue(PDO $db,array $input,array $user): array {
+ if(!is_string($input['body']??null)||!is_string($input['requestKey']??null)||!is_int($input['id']??0)||!is_int($input['revision']??0))throw new RuntimeException('Nội dung yêu cầu không hợp lệ.',400);
+ $body=trim($input['body']);$key=$input['requestKey'];$id=$input['id']??0;
+ if($body===''||strlen($body)>25000||!preg_match('/^[a-f0-9-]{36}$/D',$key))throw new RuntimeException('Nhập nội dung tối đa 25.000 ký tự và thử lại.',400);
+ returns_parse($body,[]);
+ if($id)returns_require_manage($user);
+ $fingerprint=hash('sha256',json_encode(['enqueue',$id,$input['revision']??0,$body,$user['username']],JSON_UNESCAPED_UNICODE));
+ $db->exec('BEGIN IMMEDIATE');try{
+  $q=$db->prepare('SELECT * FROM return_requests WHERE request_key=?');$q->execute([$key]);if($prior=$q->fetch()){if($prior['payload']!==$fingerprint)throw new RuntimeException('Yêu cầu đã dùng cho nội dung khác.',409);$db->exec('COMMIT');return json_decode($prior['result'],true,512,JSON_THROW_ON_ERROR);}
+  $old=null;$now=gmdate('c');
+  if($id){$q=$db->prepare('SELECT * FROM return_messages WHERE id=?');$q->execute([$id]);$old=$q->fetch();if(!$old)throw new RuntimeException('Không tìm thấy tin nhắn.',404);if((int)$old['revision']!==($input['revision']??0))throw new RuntimeException('Tin vừa được sửa. Mở lại tin trước khi sửa.',409);
+   $db->prepare("UPDATE return_messages SET body=?,entries='[]',processing='pending',manual_approvals='{}',revision=revision+1,updated_at=? WHERE id=?")->execute([$body,$now,$id]);
+  }else{$db->prepare("INSERT INTO return_messages(actor,actor_name,body,entries,processing,created_at,updated_at) VALUES(?,?,?,'[]','pending',?,?)")->execute([$user['username'],$user['name']?:$user['username'],$body,$now,$now]);$id=(int)$db->lastInsertId();}
+  $db->prepare('INSERT INTO return_edits(message_id,actor,before_body,after_body,created_at) VALUES(?,?,?,?,?)')->execute([$id,$user['username'],$old['body']??'',$body,$now]);
+  if(function_exists('people_audit'))people_audit('returns_chat',(string)$id,['before'=>$old['body']??'','after'=>$body,'queued'=>true],$db);
+  $q=$db->prepare('SELECT * FROM return_messages WHERE id=?');$q->execute([$id]);$result=['ok'=>true,'message'=>returns_message($q->fetch())];
+  $db->prepare('INSERT INTO return_requests VALUES(?,?,?)')->execute([$key,$fingerprint,json_encode($result,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)]);$db->exec('COMMIT');return $result;
+ }catch(Throwable $e){$db->exec('ROLLBACK');throw $e;}
+}
+function returns_process(PDO $db,array $input): array {
+ $id=$input['id']??0;$revision=$input['revision']??0;if(!is_int($id)||!is_int($revision)||$id<1)throw new RuntimeException('Tin nhắn không hợp lệ.',400);
+ $q=$db->prepare('SELECT * FROM return_messages WHERE id=?');$q->execute([$id]);$m=$q->fetch();if(!$m)throw new RuntimeException('Không tìm thấy tin nhắn.',404);
+ if((int)$m['revision']!==$revision||$m['processing']!=='pending')return ['ok'=>true,'message'=>returns_message($m)];
+ $hash=hash('sha256','return-process-'.$id.'-'.$revision);$key=substr($hash,0,8).'-'.substr($hash,8,4).'-'.substr($hash,12,4).'-'.substr($hash,16,4).'-'.substr($hash,20,12);
+ return returns_write($db,['id'=>$id,'revision'=>$revision,'body'=>$m['body'],'requestKey'=>$key],['username'=>$m['actor'],'name'=>$m['actor_name']],true);
+}
+function returns_approve(PDO $db,array $input,array $user): array {
+ returns_require_manage($user);$id=$input['id']??0;$revision=$input['revision']??0;$line=$input['line']??-1;
+ if(!is_int($id)||!is_int($revision)||!is_int($line)||$id<1||$line<0)throw new RuntimeException('Dòng cần duyệt không hợp lệ.',400);
+ $db->exec('BEGIN IMMEDIATE');try{
+  $q=$db->prepare('SELECT * FROM return_messages WHERE id=?');$q->execute([$id]);$m=$q->fetch();if(!$m)throw new RuntimeException('Không tìm thấy tin nhắn.',404);
+  if((int)$m['revision']!==$revision||$m['processing']==='pending')throw new RuntimeException('Tin đang đối chiếu hoặc vừa thay đổi. Vui lòng mở lại kết quả.',409);
+  $lines=preg_split('/\R/u',$m['body']);if(!isset($lines[$line])||trim($lines[$line])==='')throw new RuntimeException('Dòng cần duyệt không hợp lệ.',400);
+  $approvals=json_decode($m['manual_approvals'],true)?:[];$now=gmdate('c');$approvals[(string)$line]=['actor'=>$user['username'],'at'=>$now];
+  $db->prepare('UPDATE return_messages SET manual_approvals=?,revision=revision+1,updated_at=? WHERE id=?')->execute([json_encode((object)$approvals,JSON_UNESCAPED_UNICODE),$now,$id]);
+  $db->prepare('INSERT INTO return_edits(message_id,actor,before_body,after_body,created_at) VALUES(?,?,?,?,?)')->execute([$id,$user['username'],$m['body'],$m['body'],$now]);
+  if(function_exists('people_audit'))people_audit('returns_manual_approve',(string)$id,['line'=>$line,'text'=>$lines[$line],'actor'=>$user['username']],$db);
+  $q->execute([$id]);$result=['ok'=>true,'message'=>returns_message($q->fetch())];$db->exec('COMMIT');return $result;
  }catch(Throwable $e){$db->exec('ROLLBACK');throw $e;}
 }

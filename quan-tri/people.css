@@ -5,3 +5,5 @@
 .reset-link-input{width:100%;margin:10px 0}.password-note{font-size:13px;color:#657e6d}
 
 .leave-actions{display:flex;gap:6px;flex-wrap:wrap}.leave-actions button{padding:7px 10px;white-space:nowrap}.form-actions{display:flex;gap:10px;flex-wrap:wrap}
+
+#accountForm button.primary{transition:transform .15s ease,box-shadow .15s ease,opacity .15s ease}#accountForm button.primary:active,#accountForm button.is-saving{transform:scale(.97);box-shadow:0 0 0 4px #1b74441a}#accountForm button.is-saving{opacity:.75;cursor:wait}#accountForm button.save-complete{box-shadow:0 0 0 5px #1b744430}#accountStatus{margin:10px 0 0;grid-column:1/-1}#accountStatus.account-success{color:#13733f;background:#edf8f0;padding:10px 12px;border-radius:8px}#accountStatus.error{color:#b3261e}@media(prefers-reduced-motion:reduce){#accountForm button.primary{transition:none;transform:none}}
