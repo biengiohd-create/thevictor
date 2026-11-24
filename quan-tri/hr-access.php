@@ -6,7 +6,7 @@ function people_directory(bool $payrollOnly=false): array {
 }
 function people_attendance_view(array $input): array {
  $u=team_identity();if(!$u)throw new RuntimeException('Vui lòng đăng nhập.',401);[$from,$to]=people_month($input['month']??'');$users=people_directory();$uid=(int)($input['user']??0);if(($input['scope']??'')==='my')$uid=$u['owner']?-1:$u['id'];if($uid)$users=array_values(array_filter($users,fn($s)=>(int)$s['id']===$uid));$rows=[];$policy=payroll_policy();$canViewIO=true;
- foreach($users as $staff){$sessions=people_effective_sessions((int)$staff['id'],$from,$to);$p=payroll_compute($sessions,payroll_schedule_list((int)$staff['id'],$input['month']),$input['month'],$policy);$days=array_map(fn($d)=>array_intersect_key($d,array_flip(['date','seconds','hours','meal','late','absent'])),$p['days']);foreach($sessions as &$s)unset($s['activity']);unset($s);$rows[]=['user'=>$staff,'sessions'=>$canViewIO?$sessions:[],'daily'=>['days'=>$days,'hours'=>$p['hours'],'meal'=>$p['meal']]];}
+ foreach($users as $staff){$sessions=people_effective_sessions((int)$staff['id'],$from,$to);$p=payroll_compute($sessions,payroll_schedule_list((int)$staff['id'],$input['month']),$input['month'],$policy);$days=array_map(fn($d)=>array_intersect_key($d,array_flip(['date','seconds','hours','mealUnits','late','absent'])),$p['days']);foreach($sessions as &$s)unset($s['activity']);unset($s);$rows[]=['user'=>$staff,'sessions'=>$canViewIO?$sessions:[],'daily'=>['days'=>$days,'hours'=>$p['hours'],'mealUnits'=>$p['mealUnits']]];}
  return ['rows'=>$rows,'owner'=>$u['owner'],'month'=>$input['month'],'canViewIO'=>$canViewIO,'payrollReady'=>true];
 }
 function people_payroll_view(array $input): array {

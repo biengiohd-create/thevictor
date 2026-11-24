@@ -1,4 +1,4 @@
-import {attendanceMonthView,bindAttendanceView} from './attendance-month.js?v=80';
+import {attendanceMonthView,bindAttendanceView} from './attendance-month.js?v=81';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const tab=document.body.dataset.tab;let accounts=[],groups=[],rights={},auditPage=1,sessions=new Map(),payrollNotes=[];
 const message=(s,error=false)=>{$('message').textContent=s;$('message').classList.toggle('error',error);};
 const date=v=>v?new Date(+v*1000).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'}):'Chưa đăng xuất';
