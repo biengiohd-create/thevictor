@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {canWorkbook} from './permissions.js';
+test('Google-managed owner can view, export and inspect history without local editing',()=>{const u={owner:true,sourceReadOnly:true,rights:[]};for(const r of ['edit','restore','board'])assert.equal(canWorkbook(u,r),false);for(const r of ['view','export','history'])assert.equal(canWorkbook(u,r),true);});
+test('Ordinary workbooks keep existing owner and employee rights',()=>{assert.equal(canWorkbook({owner:true},'edit'),true);assert.equal(canWorkbook({rights:['view']},'edit'),false);assert.equal(canWorkbook({rights:['view','edit']},'edit'),true);assert.equal(canWorkbook(null,'view'),false);});
