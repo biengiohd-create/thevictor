@@ -2,6 +2,7 @@ const panel=document.querySelector('body[data-workspace="orders"] .orders-panel:
 if(panel){
  const dashboard=panel.closest('.dashboard'),total=document.querySelector('.web-total-row'),actions=document.querySelector('.workspace-actions');
  if(total&&actions){total.append(actions);document.querySelector('.workspace-nav-row').hidden=true;}
+ const filters=panel.querySelector('#filters'),filterBox=document.createElement('details'),filterTitle=document.createElement('summary');filterBox.className='orders-filter-panel';filterTitle.textContent='Tìm kiếm & bộ lọc';filterBox.append(filterTitle);filters.before(filterBox);filterBox.append(filters);const small=matchMedia('(max-width:700px)');filterBox.open=!small.matches;small.addEventListener('change',()=>{filterBox.open=!small.matches;});
  const wrap=panel.querySelector('.table-wrap'),table=document.getElementById('ordersTable'),select=document.getElementById('ordersPerPage');
  const rail=document.createElement('div'),width=document.createElement('div');rail.className='web-horizontal-scroll';rail.setAttribute('role','region');rail.setAttribute('aria-label','Cuộn ngang danh sách đơn');rail.tabIndex=0;rail.append(width);document.body.append(rail);
  let frame;

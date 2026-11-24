@@ -14,6 +14,7 @@ source_dir="$release/thevictor-$revision"
 ln -s "$root/public_html/api" "$source_dir/api"
 for file in "$source_dir"/quan-tri/*.php; do php -l "$file"; done
 php -d display_errors=1 "$source_dir/quan-tri/test-workbook-response.php"
+php -d display_errors=1 "$source_dir/quan-tri/test-time-lifecycle.php"
 php -d display_errors=1 "$source_dir/quan-tri/test-workbook.php"
 php -d display_errors=1 "$source_dir/quan-tri/test-sheet.php"
 php -d display_errors=1 "$source_dir/quan-tri/test-inbox.php"

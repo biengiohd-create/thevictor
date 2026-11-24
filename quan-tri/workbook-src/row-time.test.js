@@ -1,2 +1,11 @@
-import {test} from 'node:test';import assert from 'node:assert/strict';import {ObjectMatrix} from '@univerjs/core';import {stampRows} from './row-time.js';
+import {test} from 'node:test';import assert from 'node:assert/strict';import {ObjectMatrix} from '@univerjs/core';import {stampRows,rememberRowIdentities} from './row-time.js';
 test('actual Univer sparse matrices stamp only occupied edited rows without serializing the workbook',()=>{const matrix=new ObjectMatrix({0:{0:{v:'THỜI GIAN'},1:{v:'STT'}},1:{2:{v:'Fixture'}},2:{1:{f:'=ROW()-1'}},3:{2:{v:'Outside edited range'}}});let writes=0;const sheet={getSheet:()=>({getCell:(r,c)=>matrix.getValue(r,c),getCellMatrix:()=>matrix}),getSheetId:()=>'fixture'};const editor={workbook:{getId:()=>'book',save:()=>{throw Error('full workbook serialization in edit path');}},api:{syncExecuteCommand:(id,p)=>{writes++;for(const [r,cols]of Object.entries(p.cellValue))for(const [c,value]of Object.entries(cols))matrix.setValue(+r,+c,value);}}};stampRows(editor,sheet,1,2);const first=matrix.getValue(1,0);assert.match(first.v,/^\d{2}:\d{2}:\d{2}$/);assert.equal(first.custom.victorTime,true);assert.equal(matrix.getValue(2,0),undefined);assert.equal(matrix.getValue(3,0),undefined);stampRows(editor,sheet,1,2);assert.equal(writes,1);assert.equal(matrix.getValue(1,0).custom.victorRowId,first.custom.victorRowId);});
+
+test('customer identity updates refresh time and a cleared row loses time while STT remains',()=>{
+ const matrix=new ObjectMatrix({0:{0:{v:'THỜI GIAN'},1:{v:'STT'},3:{v:'Tên khách'},4:{v:'SĐT'}},1:{0:{v:'01:00:00',custom:{victorRowId:'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',victorTime:true}},1:{v:1},3:{v:'A'},4:{v:'0901'}}});
+ const sheet={getSheet:()=>({getCell:(r,c)=>matrix.getValue(r,c),getCellMatrix:()=>matrix}),getSheetId:()=>'s'};
+ const editor={workbook:{getId:()=>'b',getSheets:()=>[sheet]},api:{syncExecuteCommand:(id,p)=>{for(const [r,cols]of Object.entries(p.cellValue))for(const [c,v]of Object.entries(cols))matrix.setValue(+r,+c,v);}}};
+ rememberRowIdentities(editor);stampRows(editor,sheet,1,1);assert.equal(matrix.getValue(1,0).v,'01:00:00');
+ matrix.setValue(1,3,{v:'B'});stampRows(editor,sheet,1,1);assert.notEqual(matrix.getValue(1,0).v,'01:00:00');assert.equal(matrix.getValue(1,0).custom.victorRowId,'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa');
+ matrix.setValue(1,3,null);matrix.setValue(1,4,null);stampRows(editor,sheet,1,1);assert.equal(matrix.getValue(1,0).v,'');assert.equal(matrix.getValue(1,0).custom,undefined);assert.equal(matrix.getValue(1,1).v,1);
+});
