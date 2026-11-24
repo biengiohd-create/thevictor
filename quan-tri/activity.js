@@ -1,5 +1,5 @@
 import './date-picker.js?v=22';
-import './notifications.js?v=65';
+import './notifications.js?v=73';
 // Polling and a background tab do not extend payable time. Only user interaction sends activity.
 const csrf=document.querySelector('meta[name=csrf-token]')?.content;let last=0,sent=0,timer;
 function send(){if(!csrf||!last||last<=sent)return;const at=last;sent=at;fetch('people-api.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'activity',csrf,at:Math.floor(at/1000)}),keepalive:true}).catch(()=>{sent=0;});}
