@@ -33,9 +33,9 @@ function victorSend(ss,manifest,stamp,sheets) {
 }
 function victorEdit(e) {
   if(!e||!e.range)return;
-  const properties=PropertiesService.getScriptProperties(),dirty='VICTOR_DIRTY_'+e.range.getSheet().getSheetId();properties.setProperty(dirty,String(Date.now()));
+  const properties=PropertiesService.getScriptProperties(),dirty='VICTOR_DIRTY_'+e.range.getSheet().getSheetId(),marked=String(Date.now());properties.setProperty(dirty,marked);
   const lock=LockService.getScriptLock();if(!lock.tryLock(1000))return;
-  try{const ss=e.source,stamp=Date.now(),m=victorManifest(ss);victorSend(ss,m,stamp,[victorRead(e.range.getSheet())]);properties.deleteProperty(dirty);}
+  try{const ss=e.source,stamp=Date.now(),m=victorManifest(ss);victorSend(ss,m,stamp,[victorRead(e.range.getSheet())]);if(properties.getProperty(dirty)===marked)properties.deleteProperty(dirty);}
   finally{lock.releaseLock();}
 }
 function victorChange(e) {const p=PropertiesService.getScriptProperties();p.setProperty('VICTOR_CURSOR','0');p.setProperty('VICTOR_NEXT','0');}
@@ -55,7 +55,7 @@ function victorWorker() {
       if(batch.length)victorSend(ss,manifest,stamp,batch);
       p.setProperty('VICTOR_CURSOR',String(cursor));
     }
-    if(cursor>=sheets.length){p.setProperty('VICTOR_CURSOR','0');p.setProperty('VICTOR_NEXT',String(Date.now()+30*60000));}
+    if(cursor>=sheets.length){p.setProperty('VICTOR_CURSOR','0');p.setProperty('VICTOR_NEXT',String(Date.now()+3*60*60000));}
     p.deleteProperty('VICTOR_ERROR');
   } catch(e){p.setProperty('VICTOR_ERROR',new Date().toISOString()+' '+String(e.message).slice(0,200));throw e;}
   finally{lock.releaseLock();}
