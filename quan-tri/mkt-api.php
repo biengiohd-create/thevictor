@@ -5,6 +5,7 @@ try{
  if(!admin_logged_in())throw new RuntimeException('Vui lòng đăng nhập.',401);people_require_owner();$user=team_identity();$db=admin_db();mkt_schema($db);
  if($_SERVER['REQUEST_METHOD']==='GET'){
   session_write_close();$action=$_GET['action']??'report';
+  if($action==='revision')mkt_reply(['revision'=>hash('sha256',json_encode($db->query("SELECT id,status,summary FROM marketing_imports ORDER BY id DESC LIMIT 100")->fetchAll()))]);
   if($action==='sources')mkt_reply(['sources'=>$db->query("SELECT id,name,data_date,actor,created_at,status,summary FROM marketing_imports ORDER BY id DESC LIMIT 100")->fetchAll(),'catalog'=>array_values(board_catalog($db)),'policy'=>mkt_policy($db)]);
   if($action==='profit')mkt_reply(mkt_profit_days($db,$_GET));
   if(in_array($action,['preview','download'],true)){$q=$db->prepare('SELECT * FROM marketing_imports WHERE id=?');$q->execute([(int)($_GET['id']??0)]);$source=$q->fetch();if(!$source)throw new RuntimeException('Không tìm thấy nguồn dữ liệu.',404);$base=realpath(admin_private().'/mkt-files');$path=realpath($source['path']);if(!$base||!$path||!str_starts_with($path,$base.DIRECTORY_SEPARATOR))throw new RuntimeException('Không tìm thấy file gốc.',404);if($action==='download'){header('Content-Type: application/octet-stream');header("Content-Disposition: attachment; filename=marketing-data; filename*=UTF-8''".rawurlencode($source['name']));readfile($path);exit;}mkt_reply(['id'=>(int)$source['id'],'name'=>$source['name'],'date'=>$source['data_date'],'status'=>$source['status'],'tables'=>mkt_preview($source)]);}
