@@ -16,3 +16,5 @@
  #receiptProductRates td:nth-child(4)::before{content:"Đã nhận"!important}#receiptProductRates td:nth-child(5)::before{content:"Đang hoàn"!important}#receiptProductRates td:nth-child(6)::before{content:"Đã hoàn"!important}
  #receiptProductRates td:nth-child(2){font-weight:700;color:#186a45}#receiptProductRates th{font-weight:700}
 }
+
+@media(max-width:700px){#receiptProductRates tr>*{grid-column:auto!important;grid-row:auto!important;min-width:0}}
