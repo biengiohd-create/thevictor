@@ -1,0 +1,1 @@
+export function clearableRanges(ranges,lastRow,lastColumn){return ranges.map(r=>({startRow:Math.max(1,r.startRow),endRow:Math.min(lastRow,r.endRow),startColumn:Math.max(1,r.startColumn),endColumn:Math.min(lastColumn,r.endColumn)})).filter(r=>r.startRow<=r.endRow&&r.startColumn<=r.endColumn);}

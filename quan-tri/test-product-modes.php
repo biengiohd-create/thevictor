@@ -1,0 +1,25 @@
+<?php
+declare(strict_types=1);if(PHP_SAPI!=='cli')exit;function team_require_owner(){}require __DIR__.'/mkt-profit.php';require __DIR__.'/report-unified.php';
+function mode_check(bool $ok,string $m):void {if(!$ok)throw new RuntimeException('FAIL '.$m);echo 'PASS '.$m.PHP_EOL;}
+$db=new PDO('sqlite::memory:',null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]);mkt_schema($db);stock_schema($db);wb_schema($db);$db->exec("INSERT INTO stock_products VALUES('BASE900','Fixture có hàng','Nam')");
+$s=wb_empty();$s['sheetOrder']=['normal','test'];$s['sheets']=[];
+foreach(['normal'=>['Nam','BASE900 S',100000],'test'=>['Nữ','JB2 S',200000]] as $id=>$v){$s['sheets'][$id]=['id'=>$id,'name'=>'24/11/2026 '.$v[0],'rowCount'=>10,'columnCount'=>10,'cellData'=>[0=>[0=>['v'=>'Tiền'],1=>['v'=>'Sản phẩm / size'],2=>['v'=>'Tạo đơn'],3=>['v'=>'Tình trạng'],4=>['v'=>'Tên khách'],5=>['v'=>'SĐT'],6=>['v'=>'Địa chỉ'],7=>['v'=>'Mã vận đơn']],1=>[0=>['v'=>$v[2]],1=>['v'=>$v[1]],2=>['v'=>'C20'],4=>['v'=>'Fixture'],5=>['v'=>'0320000000'],6=>['v'=>'Fixture address'],7=>['v'=>$id==='test'?'9002':'9001']]]];}
+$db->prepare('INSERT INTO staff_workbook VALUES(1,?,"[]",1,"fixture","now")')->execute([json_encode($s)]);
+$catalog=board_catalog($db);mode_check(isset($catalog['JB2'])&&$catalog['JB2']['isTest']&&$catalog['JB2']['gender']==='Nữ','learn unseen test SKU and gender from source sheet');mode_check(!board_lines('JB2 S',$catalog)['errors'],'new test SKU parses as ordinary product without website catalog');
+$insert=$db->prepare("INSERT INTO marketing_rows(row_key,scope_key,active,import_id,day,account,campaign,campaign_id,ad,ad_id,sku,gender,spend,fee,orders,source_row,updated_at) VALUES(?,?,1,1,'2026-11-24','fixture',?,'','','',?,?,?,NULL,1,1,'now')");foreach([['BASE900','Nam',100],['JB2','Nữ',50]] as $v)$insert->execute([$v[0],$v[0],$v[0].' ad',$v[0],$v[1],$v[2]]);
+$input=['period'=>'custom','from'=>'2026-11-24','to'=>'2026-11-24'];$r=report_unified($db,$input);mode_check($r['groups']['total']['orders']===2&&$r['groups']['total']['sales']===300000.0,'overall totals still include test and normal orders exactly once');mode_check($r['segments']['test']['orders']===1&&$r['segments']['test']['sales']===200000.0&&$r['segments']['test']['spend']===50.0,'test orders, sales and ad cost are accounted separately');mode_check($r['segments']['normal']['sales']===100000.0&&$r['segments']['normal']['spend']===100.0,'physical product metrics remain separate');
+$only=report_unified($db,$input+['product_kind'=>'test']);mode_check($only['groups']['total']['sales']===200000.0&&$only['groups']['total']['spend']===50.0,'test filter applies to both board orders and advertising');
+product_mode_save($db,['sku'=>'JB2','kind'=>'normal','gender'=>'Nữ','effective'=>'2026-11-25'],['username'=>'fixture']);$c=board_catalog($db);mode_check(product_sku_kind($c,'JB2','2026-11-24')==='test'&&product_sku_kind($c,'JB2','2026-11-25')==='normal','transition to physical goods preserves historical test classification');
+mode_check(product_row_kind($c,['valid'=>true,'date'=>'2026-11-24','items'=>[['sku'=>'BASE900'],['sku'=>'JB2']]])==='mixed','mixed order is a separate cohort without invented money allocation');mode_check(product_sku_kind($c,'E1234','2026-11-24')==='normal','E1234 group is not misclassified as a new test SKU');
+echo "PRODUCT_MODE_TESTS_PASSED\n";
+
+$db->exec("INSERT OR IGNORE INTO stock_products VALUES('KGH90','Fixture đúng 90','Nam'),('KBH77','Fixture đúng 77','Nam')");
+$s['sheets']['test']['cellData'][2]=[0=>['v'=>529000],1=>['v'=>'KGG90 S']];$s['sheets']['test']['cellData'][3]=[0=>['v'=>529000],1=>['v'=>'KGH77 L']];$db->prepare('UPDATE staff_workbook SET snapshot=?,version=version+1')->execute([json_encode($s)]);$c=board_catalog($db);
+mode_check(!isset($c['KGG90'],$c['KGH77'])&&isset($c['JB2']),'near-name typos are quarantined instead of becoming new test products');
+$a=board_lines('KGG90 S',$c);$b=board_lines('KGH77 L',$c);mode_check(!$a['items']&&str_contains(implode(' ',$a['errors']),'KGH90')&&!$b['items']&&str_contains(implode(' ',$b['errors']),'KBH77'),'actual screenshot typos warn with the correct existing SKU for review');
+mode_check(in_array('KGH90',product_near_matches('KHG90',$c),true),'adjacent transposed letters are also detected');
+mode_check(board_lines('BASE900 S KGH77 L',$c)['errors']!==[],'known SKU never hides an unknown SKU in the same product field');
+mode_check(count(product_modes_review($db,$c))>=2,'suspect auto-discoveries remain available for explicit owner review');
+mode_check(wb_current($db)['snapshot']['sheets']['test']['cellData'][2][1]['v']==='KGG90 S','suspect detection never silently rewrites source product text');
+product_mode_save($db,['sku'=>'KGG90','kind'=>'test','gender'=>'Nam','effective'=>'2026-11-25'],['username'=>'owner']);$c=board_catalog($db);mode_check(isset($c['KGG90'])&&!board_lines('KGG90 S',$c)['errors'],'owner can explicitly confirm a truly new near-name code');
+echo "SUSPECT_PRODUCT_TESTS_PASSED\n";

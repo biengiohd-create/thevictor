@@ -1,0 +1,52 @@
+<?php
+declare(strict_types=1);
+require_once __DIR__.'/size-versions.php';require_once __DIR__.'/workbook-events.php';require_once __DIR__.'/cancel-lib.php';require_once __DIR__.'/workbook-totals.php';
+
+require_once __DIR__.'/workbook-time.php';
+const WB_COLUMNS=['Tiền','Tên khách','SĐT','Địa chỉ','Sản phẩm / size','Note','Check size','Tạo đơn','Chiều cao / cân nặng','Tình trạng','Mã vận đơn','Hoàn'];
+function wb_schema(PDO $db): void {$db->exec('CREATE TABLE IF NOT EXISTS staff_workbook(id INTEGER PRIMARY KEY CHECK(id=1), snapshot TEXT NOT NULL, sources TEXT NOT NULL, version INTEGER NOT NULL, actor TEXT NOT NULL, updated_at TEXT NOT NULL);CREATE TABLE IF NOT EXISTS staff_workbook_history(version INTEGER PRIMARY KEY,snapshot TEXT NOT NULL,sources TEXT NOT NULL,actor TEXT NOT NULL,updated_at TEXT NOT NULL)');}
+function wb_empty(): array {
+ $cells=[];foreach(WB_COLUMNS as $c=>$label)$cells[0][$c]=['v'=>$label,'t'=>1,'s'=>'header'];$widths=[140,200,150,420,300,260,130,140,200,180,180,160];$cols=[];foreach($widths as $c=>$w)$cols[$c]=['w'=>$w];$cols[0]['s']='money';$cols[2]['s']='text';
+ return ['id'=>'victor-staff','name'=>'THE VICTOR · Bảng đơn nhân viên','appVersion'=>'1.5.2','locale'=>'viVN','sheetOrder'=>['orders'],'styles'=>['header'=>['bg'=>['rgb'=>'#00e500'],'cl'=>['rgb'=>'#102c17'],'bl'=>1,'fs'=>12,'ht'=>2,'vt'=>2],'money'=>['n'=>['pattern'=>'#,##0']],'text'=>['n'=>['pattern'=>'@']]],'sheets'=>['orders'=>['id'=>'orders','name'=>'Đơn hàng','rowCount'=>200,'columnCount'=>17,'defaultRowHeight'=>32,'defaultColumnWidth'=>120,'freeze'=>['xSplit'=>0,'ySplit'=>1,'startRow'=>1,'startColumn'=>0],'rowData'=>[0=>['h'=>64]],'columnData'=>$cols,'cellData'=>$cells]]];
+}
+function wb_inbox(PDO $db): array {
+ $q=$db->query('SELECT o.*,n.number AS order_no,m.note AS admin_note,m.version AS admin_version,s.check_size,s.shipping_created,s.measurements,s.tracking,s.returned FROM orders o LEFT JOIN order_admin_numbers n ON n.code=o.code LEFT JOIN order_admin_meta m ON m.code=o.code LEFT JOIN order_sheet s ON s.code=o.code WHERE NOT EXISTS(SELECT 1 FROM order_admin_trash t WHERE t.code=o.code) ORDER BY o.created_at,o.code LIMIT 10000');$rows=[];
+ foreach($q as $r){$o=admin_order($r);$rows[]=['code'=>$o['code'],'values'=>[$o['total'],$o['customerName'],$o['phone'],$o['address'],implode(' + ',array_map(static fn($i)=>($i['sku']?:$i['name']).' '.($i['size']??'').((int)$i['qty']>1?' × '.$i['qty']:''),$o['items'])),$o['note'],$r['check_size']??'',$r['shipping_created']??'',$r['measurements']??trim(($o['height']?'Cao '.$o['height'].' cm ':'').($o['weight']?'Nặng '.$o['weight'].' kg':'')),ADMIN_STATUSES[$o['status']]??$o['status'],$r['tracking']??'',$r['returned']??'']];}return $rows;
+}
+function wb_append(array $snapshot,array $sources,array $incoming): array {
+ $sheetId=in_array('orders',$snapshot['sheetOrder'],true)?'orders':($snapshot['sheetOrder'][0]??'');if(!isset($snapshot['sheets'][$sheetId]))throw new RuntimeException('Cần ít nhất một trang tính để nhận đơn.',400);$sheet=&$snapshot['sheets'][$sheetId];$data=$sheet['cellData']??[];$last=0;foreach($data as $r=>$cells)if(count((array)$cells))$last=max($last,(int)$r);$added=0;$known=array_fill_keys($sources,true);
+ foreach($incoming as $order){if(isset($known[$order['code']]))continue;$last++;foreach($order['values'] as $c=>$v){$cell=['v'=>$v??'','t'=>$c===2?4:($c===0&&is_numeric($v)?2:1)];if($c===0)$cell['s']='money';if($c===2)$cell['s']='text';if($c===1)$cell['custom']=['websiteOrder'=>$order['code']];$data[$last][$c]=$cell;}$sources[]=$order['code'];$known[$order['code']]=true;$added++;}
+ $sheet['cellData']=$data;$sheet['rowCount']=max($sheet['rowCount']??200,$last+1);return [$snapshot,$sources,$added];
+}
+function wb_normalize_sparse(array &$s):void {if(!is_array($s['sheets']??null))return;foreach($s['sheets'] as &$sheet){if(!is_array($sheet)||!is_array($sheet['cellData']??null))continue;foreach($sheet['cellData'] as $r=>$cells){if($cells===null){unset($sheet['cellData'][$r]);continue;}if(!is_array($cells))continue;foreach($cells as $c=>$cell)if($cell===null)unset($sheet['cellData'][$r][$c]);if(!$sheet['cellData'][$r])unset($sheet['cellData'][$r]);}}unset($sheet);}
+function wb_validate(array $s): void {
+ if(($s['id']??'')!=='victor-staff'||!is_array($s['sheetOrder']??null)||!array_is_list($s['sheetOrder'])||!count($s['sheetOrder'])||count($s['sheetOrder'])>800||!is_array($s['sheets']??null)||count(array_unique($s['sheetOrder']))!==count($s['sheetOrder']))throw new RuntimeException('Sổ tính không hợp lệ.',400);
+ $count=0;foreach($s['sheetOrder'] as $id){$sheet=$s['sheets'][$id]??null;if(!is_array($sheet)||!is_int($sheet['rowCount']??null)||!is_int($sheet['columnCount']??null)||$sheet['rowCount']<1||$sheet['rowCount']>50000||$sheet['columnCount']<1||$sheet['columnCount']>512)throw new RuntimeException('Giới hạn mỗi trang: 50.000 hàng, 512 cột.',400);foreach(($sheet['cellData']??[]) as $r=>$cells){if(!ctype_digit((string)$r)||(int)$r>=$sheet['rowCount']||!is_array($cells))throw new RuntimeException('Chỉ số hàng không hợp lệ.',400);foreach($cells as $c=>$cell){if(!ctype_digit((string)$c)||(int)$c>=$sheet['columnCount']||(!is_array($cell)&&$cell!==null))throw new RuntimeException('Ô không hợp lệ.',400);if(++$count>500000)throw new RuntimeException('Tối đa 500.000 ô có dữ liệu trong một sổ.',400);}}}
+}
+function wb_current(PDO $db): ?array {$r=$db->query('SELECT * FROM staff_workbook WHERE id=1')->fetch();if(!$r)return null;return ['snapshot'=>json_decode($r['snapshot'],true,512,JSON_THROW_ON_ERROR),'sources'=>json_decode($r['sources'],true),'version'=>(int)$r['version'],'actor'=>$r['actor'],'updatedAt'=>$r['updated_at']];}
+function wb_store(PDO $db,array $snapshot,array $sources,int $version,string $actor,?array $transfer=null,array $operations=[],bool $externalTransaction=false): array {
+ wb_normalize_sparse($snapshot);wb_validate($snapshot);if(!$externalTransaction)$db->exec('BEGIN IMMEDIATE');try{$old=wb_current($db);if(($old['version']??0)!==$version)throw new RuntimeException('Bảng vừa được người khác lưu. Nội dung của bạn vẫn giữ trên màn hình; kiểm tra phần chưa lưu trước khi làm mới.',409);wb_totals_apply($snapshot,$old['snapshot']??null,function_exists('team_identity')?(bool)(team_identity()['owner']??false):true);cancel_track_deletions($db,$old['snapshot']??null,$snapshot,$actor,$version+1);$timePatches=wb_time_apply($db,$snapshot,$old['snapshot']??null);$now=gmdate('c');$json=json_encode($snapshot,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);if(strlen($json)>48000000)throw new RuntimeException('Sổ tính vượt quá 48 MB. Chia dữ liệu thành nhiều trang nhỏ hơn.',413);$src=json_encode(array_values(array_unique($sources)),JSON_THROW_ON_ERROR);
+ if($old)$db->prepare('INSERT OR IGNORE INTO staff_workbook_history(version,snapshot,sources,actor,updated_at) SELECT version,snapshot,sources,actor,updated_at FROM staff_workbook WHERE id=1')->execute();$db->prepare('INSERT INTO staff_workbook(id,snapshot,sources,version,actor,updated_at) VALUES(1,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET snapshot=excluded.snapshot,sources=excluded.sources,version=excluded.version,actor=excluded.actor,updated_at=excluded.updated_at')->execute([$json,$src,$version+1,$actor,$now]);$db->exec('DELETE FROM staff_workbook_history WHERE version NOT IN(SELECT version FROM staff_workbook_history ORDER BY version DESC LIMIT 30)');$transfer&&$db->prepare('INSERT INTO order_board_transfers(code,sheet_id,row_number,workbook_version,actor,transferred_at,targets) VALUES(?,?,?,?,?,?,?)')->execute([$transfer['code'],$transfer['sheet']??'orders',$transfer['row'],$version+1,$actor,$now,json_encode($transfer['targets']??[],JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)]);if(function_exists('people_workbook_diff')){$changes=people_workbook_diff($old['snapshot']??null,$snapshot);wb_events_record($db,$changes,$snapshot,$actor,$version+1,$now);}if(function_exists('people_audit'))people_audit($transfer?'board':'workbook_save',$transfer['code']??('Phiên bản '.($version+1)),['version'=>$version+1,'changes'=>$changes??[],'operations'=>$operations],$db);size_capture_snapshot($db,$snapshot);if(!$externalTransaction)$db->exec('COMMIT');return ['timePatches'=>$timePatches,'version'=>$version+1,'actor'=>$actor,'updatedAt'=>$now];}catch(Throwable $e){if(!$externalTransaction)$db->exec('ROLLBACK');throw $e;}
+}
+// Rebase only remote status-cell changes, never unrelated workbook changes.
+// This keeps unsaved employee data safe while return matching runs independently.
+function wb_rebase_status_updates(PDO $db,array $local,int $version,array $remote): array {
+ $q=$db->prepare('SELECT snapshot FROM staff_workbook_history WHERE version=?');$q->execute([$version]);$json=$q->fetchColumn();
+ $fail=static function(){throw new RuntimeException('Bảng có thay đổi đồng thời cần kiểm tra. Phần chưa lưu vẫn được giữ trên màn hình.',409);};
+ if(!$json)$fail();$base=json_decode($json,true,512,JSON_THROW_ON_ERROR);$normalized=$remote;$patches=[];
+ foreach(($base['sheets']??[]) as $sid=>$sheet){if(!isset($remote['sheets'][$sid],$local['sheets'][$sid]))$fail();$col=null;
+  foreach(($sheet['cellData'][0]??[]) as $c=>$cell)if(in_array(mb_strtoupper(trim((string)($cell['v']??'')),'UTF-8'),['TÌNH TRẠNG','TINH TRANG'],true))$col=(int)$c;
+  if($col===null)continue;
+  $rows=array_unique(array_merge(array_keys($sheet['cellData']??[]),array_keys($remote['sheets'][$sid]['cellData']??[])));
+  foreach($rows as $r){if((int)$r<1)continue;$before=$sheet['cellData'][$r][$col]??null;$after=$remote['sheets'][$sid]['cellData'][$r][$col]??null;if($before==$after)continue;
+   $incoming=$local['sheets'][$sid]['cellData'][$r][$col]??null;
+   if($incoming!=$before&&$incoming!=$after)$fail();
+   $rowId=$sheet['cellData'][$r][0]['custom']['victorRowId']??null;
+   if(!$rowId||($local['sheets'][$sid]['cellData'][$r][0]['custom']['victorRowId']??null)!==$rowId)$fail();
+   if($before===null){unset($normalized['sheets'][$sid]['cellData'][$r][$col]);if(empty($normalized['sheets'][$sid]['cellData'][$r]))unset($normalized['sheets'][$sid]['cellData'][$r]);}else $normalized['sheets'][$sid]['cellData'][$r][$col]=$before;
+   if($after===null)unset($local['sheets'][$sid]['cellData'][$r][$col]);else $local['sheets'][$sid]['cellData'][$r][$col]=$after;
+   $patches[]=['sheet'=>$sid,'row'=>(int)$r,'col'=>$col,'before'=>$incoming,'cell'=>$after];
+  }
+ }
+ if($normalized!=$base)$fail();return ['snapshot'=>$local,'patches'=>$patches];
+}

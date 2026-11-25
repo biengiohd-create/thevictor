@@ -1,0 +1,20 @@
+/* Numeric identifiers such as phone numbers intentionally remain text. */
+button[aria-label="Lỗi: Số được lưu trữ dưới dạng văn bản"],
+button[aria-label="Error: Number stored as text"]{display:none!important}
+
+/* On phones, reserve the footer for sheet tabs, with native horizontal touch scrolling. */
+@media(max-width:768px){
+ #editor section[data-range-selector="true"]:has([data-u-comp="slide-tab-bar"]){display:block!important;padding:0!important;height:48px!important;min-height:48px!important}
+ #editor section[data-range-selector="true"]:has([data-u-comp="slide-tab-bar"])>:not(:first-child){display:none!important}
+ #editor section[data-range-selector="true"]:has([data-u-comp="slide-tab-bar"])>:first-child{display:flex!important;width:100%!important;max-width:100%!important}
+ #editor section[data-range-selector="true"]:has([data-u-comp="slide-tab-bar"])>:first-child>:not(:has([data-u-comp="slide-tab-bar"])){display:none!important}
+ #editor [data-u-comp="slide-tab-bar"]{width:100%!important;max-width:100%!important;overflow-x:auto!important;overflow-y:hidden!important;touch-action:pan-x!important;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;padding:3px!important;height:48px!important}
+ #editor :has(>[data-u-comp="slide-tab-bar"]){width:100%!important;max-width:100%!important;flex:1!important;min-width:0!important}
+ #editor [data-u-comp="slide-tab-item"]{flex:0 0 auto!important;min-width:108px!important;max-width:190px!important;min-height:40px!important;padding:0 12px!important;font-size:13px!important;white-space:nowrap!important}
+ #editor .baseline-zoom,.mobile-zoom-value,.mobile-sheet-actions button[aria-label="Thu nhỏ bảng"],.mobile-sheet-actions button[aria-label="Phóng to bảng"]{display:none!important}
+}
+
+@media(max-width:768px){
+ .returns-toggle{top:auto!important;left:auto!important;right:142px!important;bottom:58px!important;font-size:11px!important;min-height:30px!important;padding:6px 9px!important;max-width:138px!important}
+ .returns-toggle.cancel-toggle{right:8px!important}
+}

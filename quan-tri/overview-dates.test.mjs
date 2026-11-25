@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
+const {overviewRange:r,overviewRangeLabel:label}=await import('data:text/javascript;base64,'+Buffer.from(readFileSync(new URL('./overview-dates.js',import.meta.url))).toString('base64'));
+assert.deepEqual(r('yesterday','2026-11-24'),{from:'2026-11-23',to:'2026-11-23'});
+assert.deepEqual(r('this_week','2026-11-24'),{from:'2026-11-23',to:'2026-11-29'});
+assert.deepEqual(r('last_week','2026-11-24'),{from:'2026-11-16',to:'2026-11-22'});
+assert.deepEqual(r('last_month','2026-01-01'),{from:'2025-12-01',to:'2025-12-31'});
+assert.deepEqual(r('this_month','2028-02-12'),{from:'2028-02-01',to:'2028-02-29'});
+assert.deepEqual(r('day_before_yesterday','2026-01-01'),{from:'2025-12-30',to:'2025-12-30'});
+assert.equal(label('2026-11-23','2026-11-23'),'23/11/2026');assert.equal(label('2026-11-16','2026-11-22'),'16/11/2026 – 22/11/2026');assert.throws(()=>r('day_after_tomorrow','2026-11-24'));
+console.log('OVERVIEW_DATE_TESTS_PASSED');

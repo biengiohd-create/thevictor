@@ -1,0 +1,5 @@
+<?php
+if(PHP_SAPI!=='cli')exit;require __DIR__.'/stock-matrix.php';
+function token_check($ok,$label){if(!$ok)throw new RuntimeException('FAIL '.$label);echo 'PASS '.$label.PHP_EOL;}
+$d=['balances'=>[['sku'=>'E1','size'=>'L','balance'=>5],['sku'=>'E2','size'=>'L','balance'=>3]],'variantBalances'=>[],'variants'=>[],'version'=>1];$t=stock_matrix_tokens($d);$d['version']=99;$d['balances'][1]['balance']=9;token_check(stock_matrix_tokens($d)['E1|']===$t['E1|'],'unrelated synchronization and SKU do not invalidate stocktake');$d['balances'][0]['balance']=4;token_check(stock_matrix_tokens($d)['E1|']!==$t['E1|'],'relevant stock change invalidates stocktake');
+$d['variants']=['E1'=>[['label'=>'Xấu','priority'=>1]]];$d['variantBalances']=[['sku'=>'E1','size'=>'L','variant'=>'','balance'=>4],['sku'=>'E1','size'=>'L','variant'=>'Xấu','balance'=>7]];$t=stock_matrix_tokens($d);$d['variantBalances'][1]['balance']=5;token_check(stock_matrix_tokens($d)['E1|']===$t['E1|'],'other type does not invalidate selected normal stock');token_check(stock_matrix_tokens($d)['E1|Xấu']!==$t['E1|Xấu'],'selected type update invalidates token');echo "STOCK_TOKEN_TESTS_COMPLETE\n";

@@ -1,0 +1,3 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {clearableRanges} from './clear-ranges.js';
+test('whole-column deletion preserves time and headers and clips to populated rows',()=>{assert.deepEqual(clearableRanges([{startRow:0,endRow:49999,startColumn:0,endColumn:511}],25,18),[{startRow:1,endRow:25,startColumn:1,endColumn:18}]);});
+test('all selected areas are cleared in one command without touching unrelated cells',()=>{assert.deepEqual(clearableRanges([{startRow:2,endRow:5,startColumn:3,endColumn:4},{startRow:8,endRow:9,startColumn:7,endColumn:8},{startRow:1,endRow:10,startColumn:0,endColumn:0}],50,20),[{startRow:2,endRow:5,startColumn:3,endColumn:4},{startRow:8,endRow:9,startColumn:7,endColumn:8}]);});

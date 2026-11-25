@@ -1,0 +1,18 @@
+<?php
+declare(strict_types=1);
+if(PHP_SAPI!=='cli')exit;
+$testRoot=sys_get_temp_dir().'/victor-sheet-test-'.bin2hex(random_bytes(6));mkdir($testRoot,0700);define('VICTOR_ADMIN_TEST_DIR',$testRoot);define('VICTOR_SHEET_TEST',true);
+require __DIR__.'/sheet-api.php';session_start();
+function check($condition,string $label): void {if(!$condition)throw new RuntimeException('FAIL: '.$label);echo 'PASS: '.$label.PHP_EOL;}
+function fails(callable $fn,int $status,string $label): void {try{$fn();}catch(RuntimeException $e){check($e->getCode()===$status,$label);return;}throw new RuntimeException('FAIL: '.$label);}
+try{
+ $config=['username'=>'owner','password_hash'=>password_hash(bin2hex(random_bytes(16)),PASSWORD_DEFAULT),'version'=>'fixture-owner'];file_put_contents($testRoot.'/admin-config.json',json_encode($config));$_SESSION=['admin'=>true,'auth_version'=>'fixture-owner'];
+ $db=new PDO('sqlite:'.$testRoot.'/orders.sqlite',null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]);$db->sqliteCreateFunction('vi_lower',static fn($x)=>mb_strtolower((string)$x,'UTF-8'),1);
+ $db->exec('CREATE TABLE orders(code TEXT PRIMARY KEY,owner TEXT,request_key TEXT,created_at TEXT,status TEXT,payload TEXT,ip_hash TEXT);CREATE TABLE order_sources(code TEXT PRIMARY KEY,source TEXT,channel TEXT);CREATE TABLE order_admin_numbers(number INTEGER PRIMARY KEY AUTOINCREMENT,code TEXT UNIQUE);CREATE TABLE order_admin_meta(code TEXT PRIMARY KEY,note TEXT,version INTEGER,updated_at TEXT);CREATE TABLE order_admin_trash(code TEXT PRIMARY KEY);');sheet_schema($db);
+ $values=['amount'=>'639000','customer'=>'KH KIỂM THỬ','phone'=>'0320000000','address'=>'Địa chỉ kiểm thử','products'=>'DTQ26 L','note'=>"Giao cuối tuần\nGọi trước",'check_size'=>'ok','shipping_created'=>'C20/L','measurements'=>'170 cm, 65 kg','status'=>'ok','tracking'=>'TEST-ONLY','returned'=>''];
+ $saved=sheet_save($db,[['code'=>'','version'=>0,'values'=>$values]],'owner');$code=$saved[0]['code'];$rows=sheet_rows($db,[]);check($rows['total']===1&&$rows['rows'][0]['phone']==='0320000000','create order and preserve phone leading zero');check($rows['rows'][0]['shipping_created']==='C20/L'&&$rows['rows'][0]['status']==='ok','shipping marker independent of order status');
+ sheet_save($db,[['code'=>$code,'version'=>1,'values'=>['note'=>'Updated']]],'owner');fails(fn()=>sheet_save($db,[['code'=>'','values'=>$values],['code'=>$code,'version'=>1,'values'=>['note'=>'Stale']]],'owner'),409,'stale edit rolls back entire batch');check((int)$db->query('SELECT count(*) FROM orders')->fetchColumn()===1,'no duplicate row after rollback');
+ fails(fn()=>sheet_save($db,[['code'=>$code,'version'=>2,'values'=>['amount'=>'-1']]],'owner'),400,'reject negative money');fails(fn()=>sheet_save($db,[['code'=>'','values'=>array_merge($values,['phone'=>'320000000'])]],'owner'),400,'reject truncated phone');
+ team_save(['id'=>0,'username'=>'reader','name'=>'Fixture reader','password'=>'Fixture-only-123456','rights'=>['view'],'active'=>true]);$reader=team_users()[0];$_SESSION=['admin'=>true,'staff_id'=>(int)$reader['id'],'auth_version'=>team_db()->query('SELECT version FROM staff')->fetchColumn()];check(admin_logged_in()&&team_can('view')&&!team_can('edit'),'staff permissions checked on server');fails(fn()=>sheet_save($db,[['code'=>$code,'version'=>2,'values'=>['note'=>'Denied']]],'reader'),403,'deny read-only employee write');fails(fn()=>team_save([]),403,'deny employee managing staff');team_db()->exec('UPDATE staff SET active=0');check(!admin_logged_in(),'disabled staff loses existing session');
+ echo "ALL TESTS PASSED\n";
+}finally{session_write_close();foreach(glob($testRoot.'/*') as $file)unlink($file);rmdir($testRoot);}

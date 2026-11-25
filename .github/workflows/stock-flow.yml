@@ -1,0 +1,34 @@
+name: Stock flow checks
+on:
+  push:
+    branches: [admin-spreadsheet]
+    paths:
+      - 'quan-tri/stock-flow.php'
+      - 'quan-tri/test-stock-flow.php'
+      - '.github/workflows/stock-flow.yml'
+  pull_request:
+    paths:
+      - 'quan-tri/stock-flow.php'
+      - 'quan-tri/test-stock-flow.php'
+      - '.github/workflows/stock-flow.yml'
+permissions:
+  contents: read
+jobs:
+  stock-flow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fetch exact source revision
+        env:
+          SOURCE_REPOSITORY: ${{ github.repository }}
+          SOURCE_REVISION: ${{ github.sha }}
+        run: |
+          git init .
+          git remote add origin "https://github.com/$SOURCE_REPOSITORY.git"
+          git fetch --depth=1 origin "$SOURCE_REVISION"
+          git checkout --detach FETCH_HEAD
+      - name: Verify PHP stock and partial-return calculations
+        run: |
+          php -v
+          php -l quan-tri/stock-flow.php
+          php -d display_errors=1 quan-tri/test-stock-flow.php

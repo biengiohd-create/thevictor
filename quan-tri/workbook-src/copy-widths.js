@@ -1,0 +1,4 @@
+import {ISheetClipboardService} from '@univerjs/sheets-ui';
+import {SetWorksheetColWidthMutation} from '@univerjs/sheets';
+import {widthMutations} from './copy-width-core.js';
+export function setupCopyWidths(editor){let columns=[];const service=editor.univer.__getInjector().get(ISheetClipboardService);service.addClipboardHook({id:'victor-preserve-column-widths',onBeforePaste(){columns=[];return true;},onPasteColumns(to,properties){columns=properties;return {undos:[],redos:[]};},onPasteCells(from,to,data,payload){if(!from||from.subUnitId===to.subUnitId||!['default-paste','default-paste-columns','default-paste-rows'].includes(payload.pasteType))return {undos:[],redos:[]};const sheet=editor.workbook.getSheetBySheetId(to.subUnitId);return widthMutations(to,columns,c=>sheet.getColumnWidth(c),SetWorksheetColWidthMutation.id);}});}

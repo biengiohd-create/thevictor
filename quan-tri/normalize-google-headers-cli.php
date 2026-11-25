@@ -1,0 +1,5 @@
+<?php
+declare(strict_types=1);if(PHP_SAPI!=='cli')exit;ini_set('memory_limit','768M');require __DIR__.'/lib.php';require __DIR__.'/google-sync-lib.php';
+$db=admin_db();gsync_schema($db);$state=$db->query('SELECT manifest,stamp,initialized FROM google_sync_state WHERE id=1')->fetch();if(!$state||!$state['initialized'])throw new RuntimeException('Google source is not initialized.');
+$changed=0;$db->beginTransaction();try{$save=$db->prepare('UPDATE google_sync_sheets SET payload=? WHERE id=?');foreach($db->query('SELECT id,payload FROM google_sync_sheets')->fetchAll() as $r){$s=json_decode($r['payload'],true,512,JSON_THROW_ON_ERROR);$before=$s['cellData'][0]??[];gsync_normalize_headers($s['cellData']);if($before!==$s['cellData'][0]){$save->execute([json_encode($s,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR),$r['id']]);$changed++;}}$db->commit();}catch(Throwable $e){$db->rollBack();throw $e;}
+$result=gsync_receive($db,['stamp'=>(int)$state['stamp'],'manifest'=>json_decode($state['manifest'],true),'sheets'=>[]]);echo json_encode(['normalizedSheets'=>$changed,'sync'=>$result],JSON_UNESCAPED_UNICODE).PHP_EOL;
