@@ -8,7 +8,7 @@ function stock_variant_schema(PDO $db):void {
 function stock_variant_projection(PDO $db,array $balances,array $flow):array {
  stock_variant_schema($db);$types=[];foreach($db->query('SELECT * FROM stock_variants ORDER BY priority,label') as $v)$types[$v['sku']][]=$v;
  if(!$types)return ['balances'=>[],'types'=>[],'warnings'=>[]];
- $own=!$db->inTransaction();if($own)$db->exec('BEGIN IMMEDIATE');try{
+ $db->exec('SAVEPOINT stock_variant_allocation');try{
  $pool=[];$ensure=static function($sku,$size,$variant)use(&$pool){$k=$sku.'|'.$size.'|'.$variant;$pool[$k]??=['sku'=>$sku,'size'=>$size,'variant'=>$variant,'balance'=>0,'sold'=>0,'returned'=>0];return $k;};
  foreach($db->query('SELECT sku,size,variant,SUM(quantity) qty FROM stock_movements GROUP BY sku,size,variant') as $m)if(isset($types[$m['sku']])){$k=$ensure($m['sku'],$m['size'],$m['variant']);$pool[$k]['balance']+=(int)$m['qty'];}
  $existing=[];foreach($db->query('SELECT * FROM stock_variant_dispatch') as $a)$existing[$a['identity']][$a['pair']]=json_decode($a['allocation'],true);
@@ -21,8 +21,8 @@ function stock_variant_projection(PDO $db,array $balances,array $flow):array {
  foreach($existing as $id=>$pairs)foreach($pairs as $pair=>$a)if(!isset($current[$id][$pair]))$db->prepare('DELETE FROM stock_variant_dispatch WHERE identity=? AND pair=?')->execute([$id,$pair]);
  foreach($alloc as $id=>$pairs)foreach($pairs as $pair=>$a){[$sku,$size]=explode('|',$pair,2);$save->execute([$id,$pair,json_encode($a,JSON_UNESCAPED_UNICODE),gmdate('c')]);foreach($a as $v=>$qty)$pool[$ensure($sku,$size,$v)]['sold']+=$qty;$ret=min(array_sum($a),(int)($returns[$id][$pair]??0));if($ret){if(count($a)===1){$v=(string)array_key_first($a);}else{$v='__return_review';$warnings[]='Vận đơn '.$id.' · '.$sku.' '.$size.': hàng hoàn từ nhiều loại, cần kiểm kê xác nhận loại thực nhận.';}$k=$ensure($sku,$size,$v);if(empty($preReturns[$id][$pair])){$pool[$k]['balance']+=$ret;$pool[$k]['returned']+=$ret;}}}
  foreach($types as $sku=>$vs)foreach($balances as $b)if($b['sku']===$sku)foreach(array_merge([''],array_column($vs,'label')) as $v)$ensure($sku,$b['size'],$v);
- if($own)$db->exec('COMMIT');return ['balances'=>array_values($pool),'types'=>$types,'warnings'=>array_values(array_unique($warnings))];
- }catch(Throwable $e){if($own&&$db->inTransaction())$db->exec('ROLLBACK');throw $e;}
+  $db->exec('RELEASE SAVEPOINT stock_variant_allocation');return ['balances'=>array_values($pool),'types'=>$types,'warnings'=>array_values(array_unique($warnings))];
+ }catch(Throwable $e){$db->exec('ROLLBACK TO SAVEPOINT stock_variant_allocation');$db->exec('RELEASE SAVEPOINT stock_variant_allocation');throw $e;}
 }
 function stock_variant_save(PDO $db,array $input,array $user):array {
  team_require_owner();stock_matrix_schema($db);stock_variant_schema($db);$sku=strtoupper(trim((string)($input['sku']??'')));$label=trim((string)($input['label']??''));$priority=filter_var($input['priority']??null,FILTER_VALIDATE_INT);$catalog=board_catalog($db);
