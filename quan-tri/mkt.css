@@ -20,3 +20,16 @@
 @media(min-width:1101px){#unifiedReports .overview-cards{grid-template-columns:repeat(12,minmax(0,1fr))}#unifiedReports .overview-stat{grid-column:span 4}#unifiedReports .stat-financial{grid-column:span 3}}
 
 .product-kind{display:inline-block;border-radius:5px;padding:3px 7px;background:#edf3ef;font-size:12px;white-space:nowrap}.kind-test{background:#fff1cf;color:#825500}.kind-mixed,.kind-unclassified{background:#f7e7e7;color:#8b3030}
+
+/* Keep each quantity directly under its size and label it at the input. */
+#stockMatrixForm .stock-matrix table{table-layout:fixed;width:100%;min-width:1050px}
+#stockMatrixForm .stock-matrix th,#stockMatrixForm .stock-matrix td{text-align:center;vertical-align:middle;padding:12px 8px}
+#stockMatrixForm .stock-matrix th:first-child,#stockMatrixForm .stock-matrix td:first-child{width:150px;text-align:left}
+#stockMatrixForm .stock-matrix th:last-child,#stockMatrixForm .stock-matrix td:last-child{width:80px}
+#stockMatrixForm .stock-matrix input{box-sizing:border-box;width:100%;min-width:0;margin:0;text-align:center}
+#stockMatrixForm .stock-matrix td:first-child input{text-align:left;min-width:0}
+.stock-size-input{display:flex;flex-direction:column;gap:6px;align-items:stretch;margin:0}
+.stock-size-input span{text-align:center;font-size:12px;font-weight:700;color:#234e40}
+#stockMatrixForm .stock-form-options{grid-template-columns:180px 140px 150px minmax(200px,1fr)}
+@media(max-width:900px){#stockMatrixForm .stock-form-options{grid-template-columns:1fr 1fr}#stockMatrixForm .stock-form-options label:last-child{grid-column:auto}}
+@media(max-width:480px){#stockMatrixForm .stock-form-options{grid-template-columns:1fr}}
