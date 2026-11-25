@@ -33,3 +33,7 @@
 #stockMatrixForm .stock-form-options{grid-template-columns:180px 140px 150px minmax(200px,1fr)}
 @media(max-width:900px){#stockMatrixForm .stock-form-options{grid-template-columns:1fr 1fr}#stockMatrixForm .stock-form-options label:last-child{grid-column:auto}}
 @media(max-width:480px){#stockMatrixForm .stock-form-options{grid-template-columns:1fr}}
+
+.sku-suggestions{position:fixed;z-index:100000;background:#fff;border:1px solid #bdcfc4;border-radius:8px;box-shadow:0 6px 24px #183e2a26;max-height:240px;overflow-y:auto;padding:4px;font-size:14px}
+.sku-suggestions[hidden]{display:none}.sku-suggestions [role=option]{display:flex;gap:10px;align-items:baseline;width:100%;min-height:38px;padding:8px 10px;border:0;border-radius:5px;background:white;color:#173e2d;text-align:left;cursor:pointer}
+.sku-suggestions [role=option][aria-selected=true],.sku-suggestions [role=option]:hover{background:#e8f2ec}.sku-suggestions [role=option] span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#63776b}.sku-suggestion-hint{padding:8px 10px;color:#63776b;margin:0;font-size:12px}
