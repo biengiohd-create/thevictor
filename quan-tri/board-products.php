@@ -5,7 +5,9 @@ require_once __DIR__.'/product-modes.php';
 function board_size(string $size): string {return str_replace(['XXXL','XXL',' '],['3XL','2XL',''],report_fold($size));}
 function board_parse_side(string $text,array $catalog): array {
  $out=[];$errors=[];$parts=preg_split('/\s*\+\s*|[;\r\n]+/u',mb_strtoupper(trim($text),'UTF-8'),-1,PREG_SPLIT_NO_EMPTY);if(!$parts)return ['items'=>[],'errors'=>['Chưa có sản phẩm']];
- foreach($parts as $part){$found=[];foreach($catalog as $sku=>$p)if(preg_match('/(?<![\pL\pN])'.preg_quote((string)$sku,'/').'(?![\pL\pN])/u',$part))$found[]=(string)$sku;
+ foreach($parts as $part){
+  foreach($catalog as $code=>$product)if(preg_match('/(?<![A-Z0-9])'.preg_quote((string)$code,'/').'(XS|S|M|L|XL|[2-9]XL|XXXL|XXL)(?![A-Z0-9])/u',$part,$joined)&&!isset($catalog[$code.$joined[1]])){$errors[]='Mã sản phẩm và size ghi liền: '.$joined[0].' · Ghi đúng dạng '.$code.' '.$joined[1].' và xác nhận lại trước khi gửi hàng.';continue 2;}
+  $found=[];foreach($catalog as $sku=>$p)if(preg_match('/(?<![\pL\pN])'.preg_quote((string)$sku,'/').'(?![\pL\pN])/u',$part))$found[]=(string)$sku;
   if(!$found){$plain=report_fold($part);foreach($catalog as $sku=>$p){$name=report_fold((string)$p['name']);if(mb_strlen($name)>5&&str_contains($plain,$name))$found[]=(string)$sku;}}
   if(count($found)!==1){$hint=[];if(preg_match('/(?<![A-Z0-9])([A-Z][A-Z0-9_-]*[0-9][A-Z0-9_-]*)(?![A-Z0-9])/u',$part,$token))$hint=product_near_matches($token[1],$catalog);$errors[]=($hint?'Nghi viết sai mã sản phẩm: ':'Mã sản phẩm chưa được xác nhận: ').$part.($hint?' · Đối chiếu '.implode(' / ',$hint).' · Cần xác nhận trước khi gửi hàng.':'');continue;}
   $sku=$found[0];preg_match_all('/(?<![A-Z0-9])([A-Z][A-Z0-9_-]*[0-9][A-Z0-9_-]*)(?![A-Z0-9])/u',$part,$tokens);$extra=array_values(array_filter(array_unique($tokens[1]),static fn($v)=>$v!==$sku&&!preg_match('/^X\d+$/D',$v)));
@@ -24,4 +26,14 @@ function board_lines(string $text,array $catalog): array {
 }
 function board_gender_errors(array $parsed,string $sheetGender): array {
  if($sheetGender==='')return [];$errors=[];foreach(['items'=>'Gửi đi','incoming'=>'Thu về'] as $key=>$label)foreach($parsed[$key]??[] as $item)if($item['gender']!==''&&$item['gender']!==$sheetGender)$errors[]=$label.': '.$item['sku'].' — '.$item['name'].' là sản phẩm '.$item['gender'].' trên website, nhưng nằm trong sheet '.$sheetGender;return array_values(array_unique($errors));
+}
+
+function board_sheet_sku(string $name,array $catalog):string {
+ $found=[];$name=mb_strtoupper($name,'UTF-8');foreach($catalog as $sku=>$p)if(preg_match('/(?<![\pL\pN])'.preg_quote((string)$sku,'/').'(?![\pL\pN])/u',$name))$found[]=(string)$sku;return count($found)===1?$found[0]:'';
+}
+function board_lines_in_sheet(string $text,array $catalog,string $name):array {
+ $parsed=board_lines($text,$catalog);if(!$parsed['errors'])return $parsed;$sku=board_sheet_sku($name,$catalog);if($sku==='')return $parsed;
+ // Context only supplies an omitted code to an explicit size-only field. It never repairs a typo.
+ $parts=preg_split('/\s*\+\s*|[;\r\n]+/u',mb_strtoupper(trim($text),'UTF-8'),-1,PREG_SPLIT_NO_EMPTY);if(!$parts)return $parsed;$expanded=[];foreach($parts as $part){if(!preg_match('/^(?:SIZE\s*[:\-]?\s*)?(XS|S|M|L|XL|[2-9]XL|XXXL|XXL)(?:\s*[×X]\s*([1-9]\d*))?$/u',trim($part),$m))return $parsed;$expanded[]=$sku.' '.$m[1].(isset($m[2])?' × '.$m[2]:'');}
+ return board_lines(implode(' + ',$expanded),$catalog)+['sheetSku'=>$sku];
 }
